@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { ChefHat } from "lucide-react";
+import { ChefHat, List } from "lucide-react";
 
 export default function Recipes() {
   return (
@@ -7,9 +7,8 @@ export default function Recipes() {
       title="Recipes"
       description="Manage recipes and BOMs"
       icon={ChefHat}
-      ctaLabel="Add Recipe"
       sections={[
-        { title: "Recipes List", placeholder: "All registered recipes" },
+        { title: "Recipes List", description: "Browse and manage all registered recipes.", icon: List },
       ]}
     />
   );

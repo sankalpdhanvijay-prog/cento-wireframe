@@ -64,6 +64,8 @@ export default {
           yellow: "hsl(var(--cento-yellow))",
           "yellow-light": "hsl(var(--cento-yellow-light))",
           "yellow-hover": "hsl(var(--cento-yellow-hover))",
+          "yellow-tint": "hsl(var(--cento-yellow-tint))",
+          "yellow-tint-strong": "hsl(var(--cento-yellow-tint-strong))",
           dark: "hsl(var(--cento-dark))",
           surface: "hsl(var(--cento-surface))",
           "surface-dim": "hsl(var(--cento-surface-dim))",

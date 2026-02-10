@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { Apple } from "lucide-react";
+import { Apple, List } from "lucide-react";
 
 export default function Materials() {
   return (
@@ -7,9 +7,8 @@ export default function Materials() {
       title="Materials"
       description="Manage raw materials and ingredients"
       icon={Apple}
-      ctaLabel="Add Material"
       sections={[
-        { title: "Materials List", placeholder: "All registered materials" },
+        { title: "Materials List", description: "Browse and manage all registered materials.", icon: List },
       ]}
     />
   );

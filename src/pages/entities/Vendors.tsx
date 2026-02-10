@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { Users } from "lucide-react";
+import { Users, List } from "lucide-react";
 
 export default function Vendors() {
   return (
@@ -7,9 +7,8 @@ export default function Vendors() {
       title="Vendors"
       description="Manage vendor profiles and contacts"
       icon={Users}
-      ctaLabel="Add Vendor"
       sections={[
-        { title: "Vendors List", placeholder: "All registered vendors" },
+        { title: "Vendors List", description: "Browse and manage all registered vendors.", icon: List },
       ]}
     />
   );

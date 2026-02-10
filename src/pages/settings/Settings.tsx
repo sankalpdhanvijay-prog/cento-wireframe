@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { settingsSubModules } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import { Settings as SettingsIcon } from "lucide-react";
 
 interface SettingsContentProps {
   title: string;
@@ -11,15 +12,23 @@ function SettingsContent({ title }: SettingsContentProps) {
     <div className="space-y-5">
       <h2 className="cento-page-title">{title}</h2>
       <div className="cento-card">
-        <h3 className="cento-section-header mb-4">Configuration</h3>
-        <div className="cento-placeholder">
-          {title} settings will be configured here
+        <h3 className="cento-section-header mb-5">Configuration</h3>
+        <div className="cento-empty-state">
+          <div className="h-10 w-10 rounded-xl bg-cento-yellow-tint flex items-center justify-center mb-3">
+            <SettingsIcon className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+          </div>
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className="text-xs text-muted-foreground mt-1">Configure your {title.toLowerCase()} settings here.</p>
         </div>
       </div>
       <div className="cento-card">
-        <h3 className="cento-section-header mb-4">Preferences</h3>
-        <div className="cento-placeholder">
-          Additional preferences and options
+        <h3 className="cento-section-header mb-5">Preferences</h3>
+        <div className="cento-empty-state">
+          <div className="h-10 w-10 rounded-xl bg-cento-yellow-tint flex items-center justify-center mb-3">
+            <SettingsIcon className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} />
+          </div>
+          <p className="text-sm font-medium text-foreground">Additional preferences</p>
+          <p className="text-xs text-muted-foreground mt-1">Fine-tune options and advanced settings.</p>
         </div>
       </div>
     </div>
@@ -36,7 +45,7 @@ export default function Settings() {
       {/* Settings secondary nav */}
       <div className="w-60 border-r border-border bg-card overflow-y-auto py-4 shrink-0">
         <div className="px-4 pb-3">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <span className="cento-section-header">
             Settings
           </span>
         </div>
@@ -45,13 +54,16 @@ export default function Settings() {
             key={sub.path}
             onClick={() => setActiveSection(sub.path)}
             className={cn(
-              "w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer",
-              "hover:bg-muted",
+              "w-full text-left px-4 py-2.5 text-sm transition-all cursor-pointer relative",
+              "hover:bg-cento-yellow-tint",
               activeSection === sub.path
-                ? "text-foreground font-medium border-r-2 border-cento-yellow bg-cento-yellow-light"
+                ? "text-foreground font-medium bg-cento-yellow-tint"
                 : "text-muted-foreground"
             )}
           >
+            {activeSection === sub.path && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-cento-yellow rounded-l-full" />
+            )}
             {sub.title}
           </button>
         ))}
