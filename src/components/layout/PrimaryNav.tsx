@@ -64,7 +64,7 @@ export function PrimaryNav() {
         </div>
 
         {/* Main modules */}
-        <div className="flex-1 py-2 px-2 space-y-px overflow-y-auto">
+        <div className="flex-1 py-1.5 px-2 space-y-0 overflow-y-auto">
           {mainModules.map((mod) => {
             const Icon = mod.icon;
             const active = isActive(mod.path);
@@ -74,7 +74,7 @@ export function PrimaryNav() {
                 onClick={() => handleNavClick(mod)}
                 onMouseEnter={() => handleMouseEnter(mod)}
                 className={cn(
-                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer relative",
+                  "w-full flex items-center gap-2 px-3 h-[42px] rounded-lg text-[13px] transition-all cursor-pointer relative",
                   "hover:bg-cento-yellow-tint",
                   active
                     ? "text-foreground font-medium bg-cento-yellow-tint"
@@ -109,12 +109,12 @@ export function PrimaryNav() {
         </div>
 
         {/* Settings at bottom */}
-        <div className="border-t border-border px-2 py-3 mt-auto">
+        <div className="border-t border-border px-2 py-4 mt-auto">
           <button
             onClick={() => navigate(settingsModule.path)}
             onMouseEnter={() => handleMouseEnter(settingsModule)}
             className={cn(
-              "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer relative",
+              "w-full flex items-center gap-2 px-3 h-[42px] rounded-lg text-[13px] transition-all cursor-pointer relative",
               "hover:bg-cento-yellow-tint",
               isActive(settingsModule.path)
                 ? "text-foreground font-medium bg-cento-yellow-tint"
