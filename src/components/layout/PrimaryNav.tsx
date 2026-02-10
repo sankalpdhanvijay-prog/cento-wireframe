@@ -142,7 +142,7 @@ export function PrimaryNav() {
           ref={panelRef}
           onMouseEnter={handlePanelEnter}
           onMouseLeave={handlePanelLeave}
-          className="absolute left-[var(--nav-width)] top-[var(--header-height)] z-50 w-[268px] bg-card rounded-r-xl shadow-lg border border-border border-l-0 py-2 animate-slide-in"
+          className="absolute left-[var(--nav-width)] top-[var(--header-height)] z-50 w-[272px] bg-card rounded-r-[12px] shadow-lg border border-border border-l-0 py-2 animate-slide-in"
         >
           <div className="px-4 py-2.5">
             <span className="cento-section-header">
@@ -158,9 +158,9 @@ export function PrimaryNav() {
                 onClick={() => handleSubClick(sub)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all cursor-pointer relative",
-                  "hover:bg-cento-yellow-tint",
+                  "hover:bg-[hsl(45_60%_97%)]",
                   subActive
-                    ? "text-foreground font-medium bg-cento-yellow-tint"
+                    ? "text-foreground font-medium bg-cento-yellow-tint-strong"
                     : "text-muted-foreground"
                 )}
               >
