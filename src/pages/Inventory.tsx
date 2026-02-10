@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { Package } from "lucide-react";
+import { Package, Layers, ArrowUpDown, AlertTriangle } from "lucide-react";
 
 export default function Inventory() {
   return (
@@ -8,9 +8,9 @@ export default function Inventory() {
       description="Track stock levels and movements"
       icon={Package}
       sections={[
-        { title: "Stock Overview", placeholder: "Current stock levels by category" },
-        { title: "Recent Movements", placeholder: "Stock in/out activity" },
-        { title: "Alerts", placeholder: "Low-stock and expiry warnings" },
+        { title: "Stock Overview", description: "View current stock levels by category.", icon: Layers },
+        { title: "Recent Movements", description: "Track stock in and out activity.", icon: ArrowUpDown },
+        { title: "Alerts", description: "Low-stock and expiry warnings.", icon: AlertTriangle },
       ]}
     />
   );

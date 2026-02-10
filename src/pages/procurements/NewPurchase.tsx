@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { FilePlus } from "lucide-react";
+import { FilePlus, ClipboardList, List } from "lucide-react";
 
 export default function NewPurchase() {
   return (
@@ -7,10 +7,9 @@ export default function NewPurchase() {
       title="New Purchase Order"
       description="Create a new purchase order"
       icon={FilePlus}
-      ctaLabel="Create PO"
       sections={[
-        { title: "Order Details", placeholder: "Vendor, date, and delivery info" },
-        { title: "Line Items", placeholder: "Add materials and quantities" },
+        { title: "Order Details", description: "Set vendor, date, and delivery information.", icon: ClipboardList },
+        { title: "Line Items", description: "Add materials and quantities to this order.", icon: List },
       ]}
     />
   );

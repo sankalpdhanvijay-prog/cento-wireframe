@@ -30,6 +30,7 @@ export interface NavModule {
   path: string;
   icon: LucideIcon;
   subModules?: SubModule[];
+  ctaLabel?: string;
 }
 
 export const mainModules: NavModule[] = [
@@ -81,11 +82,13 @@ export const mainModules: NavModule[] = [
     title: "Audits",
     path: "/audits",
     icon: ClipboardCheck,
+    ctaLabel: "Log Audit",
   },
   {
     title: "Wastage",
     path: "/wastage",
     icon: Trash2,
+    ctaLabel: "Upload Excel",
   },
 ];
 

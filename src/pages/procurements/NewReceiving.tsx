@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { FileInput } from "lucide-react";
+import { FileInput, ClipboardList, PackageCheck } from "lucide-react";
 
 export default function NewReceiving() {
   return (
@@ -7,10 +7,9 @@ export default function NewReceiving() {
       title="New Receiving"
       description="Log incoming deliveries"
       icon={FileInput}
-      ctaLabel="Log Receiving"
       sections={[
-        { title: "Receiving Details", placeholder: "PO reference, supplier, date" },
-        { title: "Items Received", placeholder: "Verify items and quantities" },
+        { title: "Receiving Details", description: "Reference PO, supplier, and delivery date.", icon: ClipboardList },
+        { title: "Items Received", description: "Verify delivered items and quantities.", icon: PackageCheck },
       ]}
     />
   );

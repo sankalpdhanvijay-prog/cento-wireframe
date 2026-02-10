@@ -64,7 +64,7 @@ export function PrimaryNav() {
         </div>
 
         {/* Main modules */}
-        <div className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto">
+        <div className="flex-1 py-2 px-2 space-y-px overflow-y-auto">
           {mainModules.map((mod) => {
             const Icon = mod.icon;
             const active = isActive(mod.path);
@@ -74,13 +74,16 @@ export function PrimaryNav() {
                 onClick={() => handleNavClick(mod)}
                 onMouseEnter={() => handleMouseEnter(mod)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer",
-                  "hover:bg-muted",
+                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer relative",
+                  "hover:bg-cento-yellow-tint",
                   active
-                    ? "text-foreground font-medium"
+                    ? "text-foreground font-medium bg-cento-yellow-tint"
                     : "text-muted-foreground"
                 )}
               >
+                {active && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-cento-yellow rounded-r-full" />
+                )}
                 <Icon
                   className={cn(
                     "h-[18px] w-[18px] shrink-0",
@@ -91,7 +94,7 @@ export function PrimaryNav() {
                 <span>{mod.title}</span>
                 {mod.subModules && (
                   <svg
-                    className="ml-auto h-3.5 w-3.5 text-muted-foreground/60"
+                    className="ml-auto h-3 w-3 text-muted-foreground/50"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -106,18 +109,21 @@ export function PrimaryNav() {
         </div>
 
         {/* Settings at bottom */}
-        <div className="border-t border-border px-3 py-3">
+        <div className="border-t border-border px-2 py-3 mt-auto">
           <button
             onClick={() => navigate(settingsModule.path)}
             onMouseEnter={() => handleMouseEnter(settingsModule)}
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors cursor-pointer",
-              "hover:bg-muted",
+              "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all cursor-pointer relative",
+              "hover:bg-cento-yellow-tint",
               isActive(settingsModule.path)
-                ? "text-foreground font-medium"
+                ? "text-foreground font-medium bg-cento-yellow-tint"
                 : "text-muted-foreground"
             )}
           >
+            {isActive(settingsModule.path) && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-cento-yellow rounded-r-full" />
+            )}
             <settingsModule.icon
               className={cn(
                 "h-[18px] w-[18px] shrink-0",
@@ -136,10 +142,10 @@ export function PrimaryNav() {
           ref={panelRef}
           onMouseEnter={handlePanelEnter}
           onMouseLeave={handlePanelLeave}
-          className="absolute left-[var(--nav-width)] top-[var(--header-height)] z-50 w-56 bg-card rounded-r-lg shadow-lg border border-border border-l-0 py-2 animate-slide-in"
+          className="absolute left-[var(--nav-width)] top-[var(--header-height)] z-50 w-[268px] bg-card rounded-r-xl shadow-lg border border-border border-l-0 py-2 animate-slide-in"
         >
-          <div className="px-4 py-2">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <div className="px-4 py-2.5">
+            <span className="cento-section-header">
               {hoveredModule.title}
             </span>
           </div>
@@ -151,13 +157,16 @@ export function PrimaryNav() {
                 key={sub.path}
                 onClick={() => handleSubClick(sub)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors cursor-pointer",
-                  "hover:bg-cento-yellow-light",
+                  "w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-all cursor-pointer relative",
+                  "hover:bg-cento-yellow-tint",
                   subActive
-                    ? "text-foreground font-medium bg-cento-yellow-light"
+                    ? "text-foreground font-medium bg-cento-yellow-tint"
                     : "text-muted-foreground"
                 )}
               >
+                {subActive && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-cento-yellow rounded-r-full" />
+                )}
                 <SubIcon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
                 <span>{sub.title}</span>
               </button>

@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, History } from "lucide-react";
 
 export default function Audits() {
   return (
@@ -7,9 +7,8 @@ export default function Audits() {
       title="Audits"
       description="Inventory audit logging and review"
       icon={ClipboardCheck}
-      ctaLabel="Log Audit"
       sections={[
-        { title: "Audit History", placeholder: "Past audits and results" },
+        { title: "Audit History", description: "View past audits and their results.", icon: History },
       ]}
     />
   );

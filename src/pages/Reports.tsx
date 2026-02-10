@@ -1,5 +1,5 @@
 import { BlankModulePage } from "@/components/BlankModulePage";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, FileText, PieChart } from "lucide-react";
 
 export default function Reports() {
   return (
@@ -8,8 +8,8 @@ export default function Reports() {
       description="Analytics and performance reports"
       icon={BarChart3}
       sections={[
-        { title: "Report Templates" },
-        { title: "Generated Reports" },
+        { title: "Report Templates", description: "Choose from pre-built report templates.", icon: FileText },
+        { title: "Generated Reports", description: "Access previously generated reports.", icon: PieChart },
       ]}
     />
   );
