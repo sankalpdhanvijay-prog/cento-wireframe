@@ -39,9 +39,9 @@ const App = () => (
             <Route path="/procurements/new-purchase" element={<NewPurchase />} />
             <Route path="/procurements/new-receiving" element={<NewReceiving />} />
             <Route path="/procurements/all-orders" element={<AllOrders />} />
-            <Route path="/operations" element={<Navigate to="/operations/dispatch" replace />} />
-            <Route path="/operations/dispatch" element={<DispatchManagement />} />
-            <Route path="/operations/production" element={<ProductionManagement />} />
+            <Route path="/operations" element={<Navigate to="/operations/dispatches" replace />} />
+            <Route path="/operations/dispatches" element={<DispatchManagement />} />
+            <Route path="/operations/productions" element={<ProductionManagement />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/entities" element={<Navigate to="/entities/materials" replace />} />
             <Route path="/entities/materials" element={<Materials />} />

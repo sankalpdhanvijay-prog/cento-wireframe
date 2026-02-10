@@ -59,8 +59,8 @@ export const mainModules: NavModule[] = [
     path: "/operations",
     icon: Truck,
     subModules: [
-      { title: "Dispatch Management", path: "/operations/dispatch", icon: SendHorizonal },
-      { title: "Production Management", path: "/operations/production", icon: Factory },
+      { title: "Dispatches", path: "/operations/dispatches", icon: SendHorizonal },
+      { title: "Productions", path: "/operations/productions", icon: Factory },
     ],
   },
   {
