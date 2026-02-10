@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { mainModules, settingsModule, type NavModule, type SubModule } from "@/config/navigation";
+import { mainModules, settingsModule, type NavModule } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
 interface PrimaryNavProps {
@@ -13,13 +13,16 @@ interface PrimaryNavProps {
 export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverModule }: PrimaryNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   const handleMouseEnter = useCallback((mod: NavModule) => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
     if (mod.subModules && mod.subModules.length > 0) {
       onHoverModule(mod);
     } else {
@@ -28,14 +31,13 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
   }, [onHoverModule]);
 
   const handleMouseLeave = useCallback(() => {
-    hoverTimeoutRef.current = setTimeout(() => {
+    leaveTimeoutRef.current = setTimeout(() => {
       onHoverModule(null);
-    }, 150);
+    }, 200);
   }, [onHoverModule]);
 
   const handleNavClick = (mod: NavModule) => {
     if (mod.subModules && mod.subModules.length > 0) {
-      // Click locks the panel
       if (lockedModule?.path === mod.path) {
         onLockModule(null); // toggle off
       } else {
@@ -47,7 +49,6 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
     }
   };
 
-  // Determine which module's panel to show
   const activePanel = lockedModule || hoveredModule;
 
   return (
@@ -77,7 +78,7 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
               onClick={() => handleNavClick(mod)}
               onMouseEnter={() => handleMouseEnter(mod)}
               className={cn(
-                "w-full flex items-center gap-2 px-3 h-[42px] rounded-lg text-[13px] transition-all cursor-pointer relative",
+                "w-full flex items-center gap-2 px-3 h-[42px] rounded-lg text-[13px] transition-colors cursor-pointer relative",
                 "hover:bg-cento-yellow-tint",
                 active || isPanelTarget
                   ? "text-foreground font-medium bg-cento-yellow-tint"
@@ -119,7 +120,7 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
             navigate(settingsModule.path);
           }}
           className={cn(
-            "w-full flex items-center gap-2 px-3 h-[42px] rounded-lg text-[13px] transition-all cursor-pointer relative",
+            "w-full flex items-center gap-2 px-3 h-[42px] rounded-lg text-[13px] transition-colors cursor-pointer relative",
             "hover:bg-cento-yellow-tint",
             isActive(settingsModule.path)
               ? "text-foreground font-medium bg-cento-yellow-tint"

@@ -1,15 +1,17 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { type NavModule, type SubModule } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import { PanelLeftClose } from "lucide-react";
 
 interface SubModulePanelProps {
   module: NavModule;
   isLocked: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
+  onCollapse: () => void;
 }
 
-export function SubModulePanel({ module, isLocked, onMouseEnter, onMouseLeave }: SubModulePanelProps) {
+export function SubModulePanel({ module, isLocked, onMouseEnter, onMouseLeave, onCollapse }: SubModulePanelProps) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -28,9 +30,18 @@ export function SubModulePanel({ module, isLocked, onMouseEnter, onMouseLeave }:
       onMouseLeave={onMouseLeave}
       className="w-[240px] bg-cento-yellow-tint border-r border-border flex flex-col h-full shrink-0 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)] animate-slide-in"
     >
-      {/* Header aligned with logo area */}
-      <div className="h-[var(--header-height)] flex items-center px-5 border-b border-border">
+      {/* Header with collapse toggle */}
+      <div className="h-[var(--header-height)] flex items-center justify-between px-5 border-b border-border">
         <span className="cento-section-header">{module.title}</span>
+        {isLocked && (
+          <button
+            onClick={onCollapse}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-cento-yellow-tint-strong transition-colors"
+            title="Collapse panel"
+          >
+            <PanelLeftClose className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Sub-module list */}
@@ -43,7 +54,7 @@ export function SubModulePanel({ module, isLocked, onMouseEnter, onMouseLeave }:
               key={sub.path}
               onClick={() => handleSubClick(sub)}
               className={cn(
-                "w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-all cursor-pointer relative",
+                "w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors cursor-pointer relative",
                 "hover:bg-cento-yellow-tint-strong",
                 subActive
                   ? "text-cento-yellow font-medium bg-cento-yellow-tint-strong"
