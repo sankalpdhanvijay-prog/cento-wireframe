@@ -28,7 +28,10 @@ export function SubModulePanel({ module, isLocked, onMouseEnter, onMouseLeave, o
     <div
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      className="w-[240px] bg-cento-yellow-tint border-r border-border flex flex-col h-full shrink-0 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)] animate-slide-in"
+      className={cn(
+        "w-[240px] border-r border-border flex flex-col h-full shrink-0 shadow-[2px_0_8px_-2px_rgba(0,0,0,0.06)] animate-slide-in",
+        isLocked ? "bg-cento-yellow-tint-strong" : "bg-cento-yellow-tint"
+      )}
     >
       {/* Header with collapse toggle */}
       <div className="h-[var(--header-height)] flex items-center justify-between px-5 border-b border-border">

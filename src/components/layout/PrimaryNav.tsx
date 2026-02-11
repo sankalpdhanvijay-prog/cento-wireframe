@@ -19,6 +19,8 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   const handleMouseEnter = useCallback((mod: NavModule) => {
+    // When a module is LOCKED, disable hover entirely
+    if (lockedModule) return;
     if (leaveTimeoutRef.current) {
       clearTimeout(leaveTimeoutRef.current);
       leaveTimeoutRef.current = null;
@@ -28,13 +30,15 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
     } else {
       onHoverModule(null);
     }
-  }, [onHoverModule]);
+  }, [lockedModule, onHoverModule]);
 
   const handleMouseLeave = useCallback(() => {
+    // When LOCKED, don't clear hover
+    if (lockedModule) return;
     leaveTimeoutRef.current = setTimeout(() => {
       onHoverModule(null);
     }, 200);
-  }, [onHoverModule]);
+  }, [lockedModule, onHoverModule]);
 
   const handleNavClick = (mod: NavModule) => {
     if (mod.subModules && mod.subModules.length > 0) {
