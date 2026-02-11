@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, type MutableRefObject } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { PrimaryNav } from "./PrimaryNav";
 import { SubModulePanel } from "./SubModulePanel";
@@ -10,18 +10,20 @@ export function AppLayout() {
   const [hoveredModule, setHoveredModule] = useState<NavModule | null>(null);
   const [manuallyCollapsed, setManuallyCollapsed] = useState(false);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lockedModuleRef = useRef(lockedModule) as MutableRefObject<NavModule | null>;
+  lockedModuleRef.current = lockedModule;
   const location = useLocation();
 
-  // The panel to show: locked takes priority, then hovered (if not manually collapsed for locked)
+  // The panel to show: locked takes priority, then hovered
   const activePanel = lockedModule || hoveredModule;
 
-  // When navigating, clear lock if new route is outside the locked module
+  // When pathname changes (not on lock change), clear lock if route is outside locked module
   useEffect(() => {
-    if (lockedModule && !location.pathname.startsWith(lockedModule.path)) {
+    if (lockedModuleRef.current && !location.pathname.startsWith(lockedModuleRef.current.path)) {
       setLockedModule(null);
       setManuallyCollapsed(false);
     }
-  }, [location.pathname, lockedModule]);
+  }, [location.pathname]);
 
   const clearHoverTimeout = useCallback(() => {
     if (hoverTimeoutRef.current) {
