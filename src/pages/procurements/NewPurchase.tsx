@@ -60,6 +60,14 @@ const MOCK_TAX_TYPES = [
   { id: "t4", name: "GST 28%", rate: 28 },
 ];
 
+const MOCK_CATEGORIES = [
+  "Grains", "Oils", "Meat", "Vegetables", "Sauces", "Spices", "Dairy", "Seafood", "Packaging", "Beverages",
+];
+
+const MOCK_UNITS = [
+  "KG", "LTR", "PCS", "GM", "ML", "DOZ", "PKT", "BOX",
+];
+
 const MOCK_OUTLETS = [
   { id: "o1", name: "Main Kitchen" },
   { id: "o2", name: "Branch - Indiranagar" },
@@ -381,11 +389,35 @@ export default function NewPurchase() {
                         <td className="px-3 py-2 font-medium whitespace-nowrap">
                           {item.name}
                         </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {item.category}
+                        <td className="px-3 py-2">
+                          <Select
+                            value={item.category}
+                            onValueChange={(val) => updateItem(item.id, { category: val })}
+                          >
+                            <SelectTrigger className="w-28 h-8 text-xs bg-card">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MOCK_CATEGORIES.map((c) => (
+                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
-                        <td className="px-3 py-2 text-muted-foreground">
-                          {item.unit}
+                        <td className="px-3 py-2">
+                          <Select
+                            value={item.unit}
+                            onValueChange={(val) => updateItem(item.id, { unit: val })}
+                          >
+                            <SelectTrigger className="w-24 h-8 text-xs bg-card">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {MOCK_UNITS.map((u) => (
+                                <SelectItem key={u} value={u}>{u}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         <td className="px-3 py-2 text-muted-foreground text-right">
                           {item.currentStock}
