@@ -14,6 +14,7 @@ import NewReceiving from "./pages/procurements/NewReceiving";
 import AllOrders from "./pages/procurements/AllOrders";
 import DispatchManagement from "./pages/operations/DispatchManagement";
 import ProductionManagement from "./pages/operations/ProductionManagement";
+import TransferManagement from "./pages/operations/TransferManagement";
 import Inventory from "./pages/Inventory";
 import Materials from "./pages/entities/Materials";
 import Recipes from "./pages/entities/Recipes";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/operations" element={<Navigate to="/operations/dispatches" replace />} />
             <Route path="/operations/dispatches" element={<DispatchManagement />} />
             <Route path="/operations/productions" element={<ProductionManagement />} />
+            <Route path="/operations/transfers" element={<TransferManagement />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/entities" element={<Navigate to="/entities/materials" replace />} />
             <Route path="/entities/materials" element={<Materials />} />
