@@ -13,6 +13,7 @@ import {
   ListOrdered,
   SendHorizonal,
   Factory,
+  ArrowLeftRight,
   Apple,
   ChefHat,
   Users,
@@ -62,6 +63,7 @@ export const mainModules: NavModule[] = [
     subModules: [
       { title: "Dispatches", path: "/operations/dispatches", icon: SendHorizonal },
       { title: "Productions", path: "/operations/productions", icon: Factory },
+      { title: "Transfers", path: "/operations/transfers", icon: ArrowLeftRight },
     ],
   },
   {
