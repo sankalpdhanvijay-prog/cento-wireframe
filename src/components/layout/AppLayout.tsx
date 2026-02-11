@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { PrimaryNav } from "./PrimaryNav";
 import { SubModulePanel } from "./SubModulePanel";
 import { DomainHeader } from "./DomainHeader";
+import { GlobalHeader } from "./GlobalHeader";
 import { type NavModule } from "@/config/navigation";
 
 export function AppLayout() {
@@ -89,6 +90,7 @@ export function AppLayout() {
         />
       )}
       <div className="flex flex-col flex-1 min-w-0">
+        <GlobalHeader />
         <DomainHeader />
         <main className="flex-1 overflow-y-auto p-6">
           <Outlet />
