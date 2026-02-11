@@ -31,6 +31,7 @@ export interface NavModule {
   icon: LucideIcon;
   subModules?: SubModule[];
   ctaLabel?: string;
+  standout?: boolean;
 }
 
 export const mainModules: NavModule[] = [
@@ -64,11 +65,6 @@ export const mainModules: NavModule[] = [
     ],
   },
   {
-    title: "Inventory",
-    path: "/inventory",
-    icon: Package,
-  },
-  {
     title: "Entities",
     path: "/entities",
     icon: Building2,
@@ -77,6 +73,12 @@ export const mainModules: NavModule[] = [
       { title: "Recipes", path: "/entities/recipes", icon: ChefHat },
       { title: "Vendors", path: "/entities/vendors", icon: Users },
     ],
+  },
+  {
+    title: "Inventory",
+    path: "/inventory",
+    icon: Package,
+    standout: true,
   },
   {
     title: "Audits",

@@ -86,7 +86,8 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
                 "hover:bg-cento-yellow-tint",
                 active || isPanelTarget
                   ? "text-foreground font-medium bg-cento-yellow-tint"
-                  : "text-muted-foreground"
+                  : "text-muted-foreground",
+                mod.standout && !active && "border border-cento-border-subtle bg-cento-surface-dim font-medium text-foreground"
               )}
             >
               {active && (
@@ -95,9 +96,10 @@ export function PrimaryNav({ lockedModule, onLockModule, hoveredModule, onHoverM
               <Icon
                 className={cn(
                   "h-[18px] w-[18px] shrink-0",
-                  active ? "text-cento-yellow" : ""
+                  active ? "text-cento-yellow" : "",
+                  mod.standout && !active && "text-cento-yellow"
                 )}
-                strokeWidth={active ? 2 : 1.5}
+                strokeWidth={active || mod.standout ? 2 : 1.5}
               />
               <span>{mod.title}</span>
               {mod.subModules && (
