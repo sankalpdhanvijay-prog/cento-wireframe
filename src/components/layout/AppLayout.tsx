@@ -35,11 +35,11 @@ export function AppLayout() {
   }, [clearHoverTimeout]);
 
   const handlePanelMouseLeave = useCallback(() => {
-    // Only auto-hide hover panels, never locked ones
+    // Only auto-hide in PREVIEW state, never in LOCKED state
     if (!lockedModule) {
       hoverTimeoutRef.current = setTimeout(() => {
         setHoveredModule(null);
-      }, 200);
+      }, 150);
     }
   }, [lockedModule]);
 
@@ -52,20 +52,22 @@ export function AppLayout() {
   }, []);
 
   const handleHoverModule = useCallback((mod: NavModule | null) => {
+    // Hover is ignored when LOCKED
+    if (lockedModule) return;
     clearHoverTimeout();
     setHoveredModule(mod);
-  }, [clearHoverTimeout]);
+  }, [lockedModule, clearHoverTimeout]);
 
   const handleCollapseToggle = useCallback(() => {
-    if (lockedModule) {
-      setLockedModule(null);
-      setManuallyCollapsed(true);
-    }
-  }, [lockedModule]);
+    // Explicit collapse: return to CLOSED state, re-enable hover
+    setLockedModule(null);
+    setHoveredModule(null);
+    setManuallyCollapsed(false);
+  }, []);
 
-  // Determine if the sub-module panel should be visible
-  const showPanel = activePanel && activePanel.subModules && activePanel.subModules.length > 0
-    && !(manuallyCollapsed && !hoveredModule);
+  // Panel visible in PREVIEW (hoveredModule) or LOCKED (lockedModule) state
+  const showPanel = activePanel && activePanel.subModules && activePanel.subModules.length > 0;
+  const isLocked = !!lockedModule;
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
@@ -78,7 +80,7 @@ export function AppLayout() {
       {showPanel && activePanel && (
         <SubModulePanel
           module={activePanel}
-          isLocked={lockedModule?.path === activePanel.path}
+          isLocked={isLocked}
           onMouseEnter={handlePanelMouseEnter}
           onMouseLeave={handlePanelMouseLeave}
           onCollapse={handleCollapseToggle}
