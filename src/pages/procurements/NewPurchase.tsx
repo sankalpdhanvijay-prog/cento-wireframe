@@ -467,19 +467,19 @@ export default function NewPurchase() {
                 <div />
                 <div className="flex items-end gap-6">
                   {/* Totals */}
-                  <div className="cento-card !py-3 !px-5 space-y-1.5 min-w-[260px]">
-                    <div className="flex justify-between text-sm">
+                  <div className="cento-card !py-5 !px-6 space-y-3 min-w-[360px]">
+                    <div className="flex justify-between text-base">
                       <span className="text-muted-foreground">Purchase Total</span>
-                      <span className="font-medium">₹{totals.purchaseTotal.toFixed(2)}</span>
+                      <span className="font-medium text-lg">₹{totals.purchaseTotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-base">
                       <span className="text-muted-foreground">Total Tax</span>
-                      <span className="font-medium">₹{totals.taxTotal.toFixed(2)}</span>
+                      <span className="font-medium text-lg">₹{totals.taxTotal.toFixed(2)}</span>
                     </div>
-                    <div className="border-t border-border my-1" />
-                    <div className="flex justify-between text-base font-semibold rounded-md bg-cento-yellow-tint px-2 py-1.5 -mx-1">
+                    <div className="border-t border-border my-2" />
+                    <div className="flex justify-between text-lg font-semibold rounded-md bg-cento-yellow-tint px-3 py-2.5 -mx-1">
                       <span>Total Purchase Order</span>
-                      <span>₹{totals.grandTotal.toFixed(2)}</span>
+                      <span className="text-xl">₹{totals.grandTotal.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -488,13 +488,14 @@ export default function NewPurchase() {
                     <Button
                       variant="outline"
                       disabled={!hasItems}
-                      className="bg-card"
+                      className={cn("bg-card", !hasItems && "opacity-40 cursor-not-allowed")}
                     >
                       Draft
                     </Button>
                     <Button
+                      variant="cento"
                       disabled={!hasItems}
-                      className="bg-primary text-primary-foreground shadow-sm"
+                      className={cn(!hasItems && "opacity-40 cursor-not-allowed")}
                     >
                       Generate
                     </Button>
