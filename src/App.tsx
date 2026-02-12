@@ -10,7 +10,11 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import NewPurchase from "./pages/procurements/NewPurchase";
-import NewReceiving from "./pages/procurements/NewReceiving";
+import ReceivingLanding from "./pages/procurements/receiving/ReceivingLanding";
+import CreateReceivingTypeSelect from "./pages/procurements/receiving/CreateReceivingTypeSelect";
+import POBasedReceiving from "./pages/procurements/receiving/POBasedReceiving";
+import DirectReceiving from "./pages/procurements/receiving/DirectReceiving";
+import ViewReceiving from "./pages/procurements/receiving/ViewReceiving";
 import AllOrders from "./pages/procurements/AllOrders";
 import DispatchManagement from "./pages/operations/DispatchManagement";
 import ProductionManagement from "./pages/operations/ProductionManagement";
@@ -38,7 +42,12 @@ const App = () => (
             <Route path="/reports" element={<Reports />} />
             <Route path="/procurements" element={<Navigate to="/procurements/new-purchase" replace />} />
             <Route path="/procurements/new-purchase" element={<NewPurchase />} />
-            <Route path="/procurements/new-receiving" element={<NewReceiving />} />
+            <Route path="/procurements/new-receiving" element={<ReceivingLanding />} />
+            <Route path="/procurements/new-receiving/create" element={<CreateReceivingTypeSelect />} />
+            <Route path="/procurements/new-receiving/po" element={<POBasedReceiving />} />
+            <Route path="/procurements/new-receiving/direct" element={<DirectReceiving />} />
+            <Route path="/procurements/new-receiving/view/:id" element={<ViewReceiving />} />
+            <Route path="/procurements/new-receiving/edit/:id" element={<POBasedReceiving />} />
             <Route path="/procurements/all-orders" element={<AllOrders />} />
             <Route path="/operations" element={<Navigate to="/operations/dispatches" replace />} />
             <Route path="/operations/dispatches" element={<DispatchManagement />} />
