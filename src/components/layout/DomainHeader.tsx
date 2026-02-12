@@ -20,7 +20,6 @@ const getDomainInfo = (pathname: string) => {
   if (sub) {
     const subCtaMap: Record<string, string> = {
       "/procurements/new-purchase": "Create PO",
-      "/procurements/new-receiving": "Log Receiving",
       "/operations/dispatches": "New Dispatch",
       "/operations/productions": "New Production",
       "/entities/materials": "Add Material",
