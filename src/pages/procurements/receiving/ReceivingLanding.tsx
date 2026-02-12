@@ -68,6 +68,7 @@ export default function ReceivingLanding() {
   const [tab, setTab] = useState("po");
   const [outlet, setOutlet] = useState("all");
   const [vendor, setVendor] = useState("all");
+  const [status, setStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
@@ -78,6 +79,7 @@ export default function ReceivingLanding() {
       if (r.type !== typeFilter) return false;
       if (outlet !== "all" && r.outlet !== outlet) return false;
       if (vendor !== "all" && r.vendor !== vendor) return false;
+      if (status !== "all" && r.status !== status) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         if (
@@ -89,7 +91,7 @@ export default function ReceivingLanding() {
       }
       return true;
     });
-  }, [tab, outlet, vendor, searchQuery]);
+  }, [tab, outlet, vendor, status, searchQuery]);
 
   return (
     <div className="space-y-4 max-w-6xl">
@@ -156,6 +158,20 @@ export default function ReceivingLanding() {
               {MOCK_VENDORS.map((v) => (
                 <SelectItem key={v.id} value={v.name}>{v.name}</SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          <div className="w-px h-6 bg-border" />
+
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-[140px] h-9 text-xs bg-card">
+              <Filter className="h-3 w-3 text-muted-foreground mr-1" />
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="Submitted">Submitted</SelectItem>
+              <SelectItem value="Draft">Draft</SelectItem>
             </SelectContent>
           </Select>
 
