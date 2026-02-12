@@ -264,7 +264,7 @@ export default function POBasedReceiving() {
                 onChange={(e) => setPOSearch(e.target.value)}
                 onFocus={() => setPOSearchFocused(true)}
                 onBlur={() => setTimeout(() => setPOSearchFocused(false), 200)}
-                placeholder="Search by PO number or vendor..."
+                placeholder="Search by PO number..."
                 className="pl-9 bg-card"
               />
               {poSearchFocused && filteredPOs.length > 0 && (
