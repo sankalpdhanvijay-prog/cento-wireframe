@@ -7,6 +7,7 @@ import {
   CalendarIcon,
   MapPin,
   Plus,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,8 +37,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import {
-  MaterialRow,
-  SummaryBlock,
+  DirectSummaryBlock,
   recalcRow,
   createEmptyRow,
   type ReceivingMaterialRow,
@@ -78,12 +78,11 @@ export default function DirectReceiving() {
   const [invoiceDate, setInvoiceDate] = useState<Date>();
   const [reference, setReference] = useState("");
   const [materials, setMaterials] = useState<ReceivingMaterialRow[]>([]);
-  const [expandedDamaged, setExpandedDamaged] = useState<string | null>(null);
   const [materialSearch, setMaterialSearch] = useState("");
   const [materialSearchFocused, setMaterialSearchFocused] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
 
-  const receivingId = "RCV-2026-" + String(Math.floor(Math.random() * 900) + 100);
+  const receivingId = useMemo(() => "RCV-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
 
   const filteredMaterials = useMemo(() => {
     if (!materialSearch.trim()) return [];
@@ -118,14 +117,14 @@ export default function DirectReceiving() {
   }, []);
 
   const totals = useMemo(() => {
-    const totalAccepted = materials.reduce((s, r) => s + r.acceptedQty, 0);
-    const totalDamaged = materials.reduce((s, r) => s + r.damagedQty, 0);
-    return { totalAccepted, totalDamaged, totalReceiving: totalAccepted + totalDamaged };
+    const invoiceSubtotal = materials.reduce((s, r) => s + r.lineTotal, 0);
+    const totalTax = materials.reduce((s, r) => s + r.taxAmount, 0);
+    const grandTotal = invoiceSubtotal + totalTax;
+    return { invoiceSubtotal, totalTax, grandTotal };
   }, [materials]);
 
-  const hasErrors = materials.some((r) => r.hasError || r.remarksRequired);
-  const hasReceivingQty = materials.some((r) => r.receivingQty > 0);
-  const canSubmit = hasReceivingQty && !hasErrors && !!vendor && materials.length > 0;
+  const hasAccepted = materials.some((r) => r.acceptedQty > 0);
+  const canSubmit = hasAccepted && !!vendor && materials.length > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -150,13 +149,8 @@ export default function DirectReceiving() {
                 ))}
               </SelectContent>
             </Select>
-
             <span className="text-xs text-muted-foreground font-mono">{receivingId}</span>
-
-            <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">
-              Draft
-            </Badge>
-
+            <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">Draft</Badge>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="h-8 text-xs bg-card font-normal">
@@ -169,14 +163,11 @@ export default function DirectReceiving() {
               </PopoverContent>
             </Popover>
           </div>
-
-          <Badge variant="outline" className="text-[10px] border-border bg-muted/50 text-muted-foreground">
-            Direct Receiving
-          </Badge>
+          <Badge variant="outline" className="text-[10px] border-border bg-muted/50 text-muted-foreground">Direct Receiving</Badge>
         </div>
       </div>
 
-      <div className="flex-1 space-y-5 overflow-auto pb-24 max-w-5xl">
+      <div className="flex-1 space-y-5 overflow-auto pb-32 max-w-5xl">
         {/* Vendor Block */}
         <div className="cento-card">
           <h3 className="cento-section-header mb-3">Vendor Details</h3>
@@ -256,34 +247,63 @@ export default function DirectReceiving() {
               <p className="text-sm text-muted-foreground">No materials added yet. Use the search above to add items.</p>
             </div>
           ) : (
-            <>
-              <div className="grid grid-cols-[1.5fr_70px_90px_90px_70px_80px_40px] gap-3 px-4 py-2.5 bg-muted/30 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <span>Material</span>
-                <span>Unit</span>
-                <span>Accepted</span>
-                <span>Damaged</span>
-                <span>Cases</span>
-                <span className="text-right">Rcv Qty</span>
-                <span></span>
+            <div className="overflow-x-auto">
+              <div className="min-w-[700px]">
+                <div className="grid grid-cols-[1.5fr_80px_100px_60px_90px_80px_90px_36px] gap-2 px-4 py-2.5 bg-muted/30 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span>Item Name</span>
+                  <span>Accepted</span>
+                  <span>Invoice Price</span>
+                  <span>Tax %</span>
+                  <span className="text-right">Line Total</span>
+                  <span className="text-right">Tax Amt</span>
+                  <span className="text-right">Total</span>
+                  <span></span>
+                </div>
+                {materials.map((row) => (
+                  <div key={row.id} className="grid grid-cols-[1.5fr_80px_100px_60px_90px_80px_90px_36px] gap-2 px-4 py-3 items-center border-b border-border/40">
+                    <span className="text-sm font-medium text-foreground">{row.name}
+                      <span className="text-xs text-muted-foreground ml-1.5">{row.unit}</span>
+                    </span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={row.acceptedQty || ""}
+                      onChange={(e) => updateMaterial(row.id, { acceptedQty: parseFloat(e.target.value) || 0 })}
+                      className="h-8 text-sm text-right bg-card"
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={row.invoiceUnitPrice || ""}
+                      onChange={(e) => updateMaterial(row.id, { invoiceUnitPrice: parseFloat(e.target.value) || 0 })}
+                      className="h-8 text-sm text-right bg-card"
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      step={0.1}
+                      value={row.taxPercent || ""}
+                      onChange={(e) => updateMaterial(row.id, { taxPercent: parseFloat(e.target.value) || 0 })}
+                      className="h-8 text-sm text-right bg-card"
+                    />
+                    <span className="text-sm text-foreground text-right">₹{row.lineTotal.toFixed(2)}</span>
+                    <span className="text-sm text-muted-foreground text-right">₹{row.taxAmount.toFixed(2)}</span>
+                    <span className="text-sm font-semibold text-foreground text-right">₹{row.totalLineAmount.toFixed(2)}</span>
+                    <button onClick={() => removeMaterial(row.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
               </div>
-              {materials.map((row) => (
-                <MaterialRow
-                  key={row.id}
-                  row={row}
-                  showPOColumns={false}
-                  readOnly={false}
-                  expandedDamaged={expandedDamaged}
-                  onToggleDamaged={setExpandedDamaged}
-                  onUpdate={updateMaterial}
-                  onRemove={removeMaterial}
-                />
-              ))}
-            </>
+            </div>
           )}
         </div>
 
         {/* Summary */}
-        {materials.length > 0 && <SummaryBlock {...totals} />}
+        {materials.length > 0 && <DirectSummaryBlock {...totals} />}
       </div>
 
       {/* Sticky Footer */}
@@ -300,15 +320,11 @@ export default function DirectReceiving() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Submit Receiving?</DialogTitle>
-            <DialogDescription>
-              Submitting this receiving will update stock levels immediately. This action cannot be edited afterward.
-            </DialogDescription>
+            <DialogDescription>Submitting this receiving will update stock levels immediately. This action cannot be edited afterward.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>Cancel</Button>
-            <Button variant="cento" onClick={() => { setShowSubmitDialog(false); navigate("/procurements/new-receiving"); }}>
-              Confirm & Submit
-            </Button>
+            <Button variant="cento" onClick={() => { setShowSubmitDialog(false); navigate("/procurements/new-receiving"); }}>Confirm & Submit</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

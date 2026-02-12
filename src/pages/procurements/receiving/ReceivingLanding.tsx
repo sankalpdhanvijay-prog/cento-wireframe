@@ -2,7 +2,6 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  FileInput,
   Plus,
   Search,
   CalendarIcon,
@@ -51,35 +50,34 @@ interface ReceivingRow {
   type: "PO Based" | "Direct";
   status: "Submitted" | "Draft";
   totalQty: number;
+  grandTotal: number;
   itemCount: number;
 }
 
 const MOCK_RECEIVINGS: ReceivingRow[] = [
-  { id: "1", receivingId: "RCV-2026-001", poNumber: "PO-2026-045", vendor: "Fresh Farms Pvt Ltd", outlet: "Main Kitchen", date: "2026-02-10", type: "PO Based", status: "Submitted", totalQty: 150, itemCount: 5 },
-  { id: "2", receivingId: "RCV-2026-002", vendor: "Spice World Traders", outlet: "Main Kitchen", date: "2026-02-09", type: "Direct", status: "Submitted", totalQty: 45, itemCount: 3 },
-  { id: "3", receivingId: "RCV-2026-003", poNumber: "PO-2026-038", vendor: "Daily Dairy Supplies", outlet: "Branch - Indiranagar", date: "2026-02-08", type: "PO Based", status: "Draft", totalQty: 80, itemCount: 4 },
-  { id: "4", receivingId: "RCV-2026-004", vendor: "Fresh Farms Pvt Ltd", outlet: "Branch - Koramangala", date: "2026-02-07", type: "Direct", status: "Draft", totalQty: 30, itemCount: 2 },
-  { id: "5", receivingId: "RCV-2026-005", poNumber: "PO-2026-050", vendor: "Daily Dairy Supplies", outlet: "Main Kitchen", date: "2026-02-11", type: "PO Based", status: "Submitted", totalQty: 200, itemCount: 7 },
+  { id: "1", receivingId: "RCV-2026-001", poNumber: "PO-2026-045", vendor: "Fresh Farms Pvt Ltd", outlet: "Main Kitchen", date: "2026-02-10", type: "PO Based", status: "Submitted", totalQty: 150, grandTotal: 32500, itemCount: 5 },
+  { id: "2", receivingId: "RCV-2026-002", vendor: "Spice World Traders", outlet: "Main Kitchen", date: "2026-02-09", type: "Direct", status: "Submitted", totalQty: 45, grandTotal: 8750, itemCount: 3 },
+  { id: "3", receivingId: "RCV-2026-003", poNumber: "PO-2026-038", vendor: "Daily Dairy Supplies", outlet: "Branch - Indiranagar", date: "2026-02-08", type: "PO Based", status: "Draft", totalQty: 80, grandTotal: 28800, itemCount: 4 },
+  { id: "4", receivingId: "RCV-2026-004", vendor: "Fresh Farms Pvt Ltd", outlet: "Branch - Koramangala", date: "2026-02-07", type: "Direct", status: "Draft", totalQty: 30, grandTotal: 4200, itemCount: 2 },
+  { id: "5", receivingId: "RCV-2026-005", poNumber: "PO-2026-050", vendor: "Daily Dairy Supplies", outlet: "Main Kitchen", date: "2026-02-11", type: "PO Based", status: "Submitted", totalQty: 200, grandTotal: 54000, itemCount: 7 },
 ];
 
 export default function ReceivingLanding() {
   const navigate = useNavigate();
   const isAdmin = true;
-  const [tab, setTab] = useState("submitted");
+  const [tab, setTab] = useState("po");
   const [outlet, setOutlet] = useState("all");
   const [vendor, setVendor] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState<Date>();
   const [dateTo, setDateTo] = useState<Date>();
 
   const filtered = useMemo(() => {
-    const statusFilter = tab === "submitted" ? "Submitted" : "Draft";
+    const typeFilter = tab === "po" ? "PO Based" : "Direct";
     return MOCK_RECEIVINGS.filter((r) => {
-      if (r.status !== statusFilter) return false;
+      if (r.type !== typeFilter) return false;
       if (outlet !== "all" && r.outlet !== outlet) return false;
       if (vendor !== "all" && r.vendor !== vendor) return false;
-      if (typeFilter !== "all" && r.type !== typeFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         if (
@@ -91,7 +89,7 @@ export default function ReceivingLanding() {
       }
       return true;
     });
-  }, [tab, outlet, vendor, typeFilter, searchQuery]);
+  }, [tab, outlet, vendor, searchQuery]);
 
   return (
     <div className="space-y-4 max-w-6xl">
@@ -110,11 +108,11 @@ export default function ReceivingLanding() {
       {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-muted/50">
-          <TabsTrigger value="submitted" className="data-[state=active]:shadow-sm">
-            Submitted
+          <TabsTrigger value="po" className="data-[state=active]:shadow-sm">
+            From Purchase Order
           </TabsTrigger>
-          <TabsTrigger value="drafts" className="data-[state=active]:shadow-sm">
-            Drafts
+          <TabsTrigger value="direct" className="data-[state=active]:shadow-sm">
+            From Direct Receiving
           </TabsTrigger>
         </TabsList>
 
@@ -161,20 +159,6 @@ export default function ReceivingLanding() {
             </SelectContent>
           </Select>
 
-          <div className="w-px h-6 bg-border" />
-
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[140px] h-9 text-xs bg-card">
-              <Filter className="h-3 w-3 text-muted-foreground mr-1" />
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="PO Based">PO Based</SelectItem>
-              <SelectItem value="Direct">Direct</SelectItem>
-            </SelectContent>
-          </Select>
-
           <div className="flex-1" />
 
           <div className="relative w-[240px]">
@@ -188,18 +172,18 @@ export default function ReceivingLanding() {
           </div>
         </div>
 
-        <TabsContent value="submitted" className="mt-0">
-          <ReceivingList rows={filtered} onRowClick={(id) => navigate(`/procurements/new-receiving/view/${id}`)} />
+        <TabsContent value="po" className="mt-0">
+          <ReceivingList rows={filtered} isPO onRowClick={(row) => navigate(row.status === "Draft" ? `/procurements/new-receiving/edit/${row.id}` : `/procurements/new-receiving/view/${row.id}`)} />
         </TabsContent>
-        <TabsContent value="drafts" className="mt-0">
-          <ReceivingList rows={filtered} onRowClick={(id) => navigate(`/procurements/new-receiving/edit/${id}`)} />
+        <TabsContent value="direct" className="mt-0">
+          <ReceivingList rows={filtered} isPO={false} onRowClick={(row) => navigate(row.status === "Draft" ? `/procurements/new-receiving/edit/${row.id}` : `/procurements/new-receiving/view/${row.id}`)} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function ReceivingList({ rows, onRowClick }: { rows: ReceivingRow[]; onRowClick: (id: string) => void }) {
+function ReceivingList({ rows, isPO, onRowClick }: { rows: ReceivingRow[]; isPO: boolean; onRowClick: (row: ReceivingRow) => void }) {
   if (rows.length === 0) {
     return (
       <div className="cento-card mt-3">
@@ -218,21 +202,30 @@ function ReceivingList({ rows, onRowClick }: { rows: ReceivingRow[]; onRowClick:
 
   return (
     <div className="cento-card mt-3 !p-0 overflow-hidden">
-      {/* Header row */}
-      <div className="grid grid-cols-[1fr_1fr_1fr_100px_100px_90px_80px] gap-3 px-4 py-2.5 bg-muted/30 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className={cn(
+        "grid gap-3 px-4 py-2.5 bg-muted/30 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider",
+        isPO
+          ? "grid-cols-[1fr_1fr_1fr_100px_90px_100px_80px]"
+          : "grid-cols-[1fr_1fr_1fr_100px_100px_80px]"
+      )}>
         <span>Receiving ID</span>
         <span>Vendor</span>
         <span>Outlet</span>
         <span>Date</span>
-        <span>Type</span>
-        <span className="text-right">Qty</span>
+        {isPO && <span className="text-right">Qty</span>}
+        <span className="text-right">Total</span>
         <span className="text-right">Status</span>
       </div>
       {rows.map((row) => (
         <div
           key={row.id}
-          onClick={() => onRowClick(row.id)}
-          className="grid grid-cols-[1fr_1fr_1fr_100px_100px_90px_80px] gap-3 px-4 py-3.5 border-b border-border/40 cursor-pointer hover:bg-muted/30 transition-colors group"
+          onClick={() => onRowClick(row)}
+          className={cn(
+            "grid gap-3 px-4 py-3.5 border-b border-border/40 cursor-pointer hover:bg-muted/30 transition-colors",
+            isPO
+              ? "grid-cols-[1fr_1fr_1fr_100px_90px_100px_80px]"
+              : "grid-cols-[1fr_1fr_1fr_100px_100px_80px]"
+          )}
         >
           <div>
             <span className="text-sm font-medium text-foreground">{row.receivingId}</span>
@@ -243,8 +236,8 @@ function ReceivingList({ rows, onRowClick }: { rows: ReceivingRow[]; onRowClick:
           <span className="text-sm text-foreground truncate">{row.vendor}</span>
           <span className="text-sm text-muted-foreground truncate">{row.outlet}</span>
           <span className="text-sm text-muted-foreground">{format(new Date(row.date), "dd MMM")}</span>
-          <span className="text-xs text-muted-foreground">{row.type}</span>
-          <span className="text-sm text-foreground text-right font-medium">{row.totalQty}</span>
+          {isPO && <span className="text-sm text-foreground text-right font-medium">{row.totalQty}</span>}
+          <span className="text-sm text-foreground text-right font-medium">₹{row.grandTotal.toLocaleString("en-IN")}</span>
           <div className="flex justify-end">
             <Badge
               variant="outline"
