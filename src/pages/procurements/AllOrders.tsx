@@ -17,44 +17,7 @@ import {
 import {
   Plus, MoreHorizontal, Search, Eye, Pencil, Trash2, XCircle, Lock,
 } from "lucide-react";
-
-/* ───── status types ───── */
-type POStatus = "Drafted" | "Raised" | "Approved" | "Partially Received" | "Closed" | "Cancelled";
-
-interface PORow {
-  id: string;
-  vendor: string;
-  outlet: string;
-  totalValue: number;
-  totalQty: number;
-  receivedQty?: number;
-  pendingQty?: number;
-  createdBy: string;
-  createdOn: string;
-  lastUpdated?: string;
-  lastReceivingDate?: string;
-  closedDate?: string;
-  closedBy?: string;
-  cancelledDate?: string;
-  cancelledBy?: string;
-  status: POStatus;
-}
-
-/* ───── mock data ───── */
-const MOCK: PORow[] = [
-  { id: "PO-1001", vendor: "Sysco Foods", outlet: "Main Kitchen", totalValue: 24500, totalQty: 120, createdBy: "Ankit", createdOn: "2026-02-01", lastUpdated: "2026-02-02", status: "Drafted" },
-  { id: "PO-1002", vendor: "US Foods", outlet: "Central Warehouse", totalValue: 18200, totalQty: 85, createdBy: "Meera", createdOn: "2026-02-03", lastUpdated: "2026-02-04", status: "Drafted" },
-  { id: "PO-1003", vendor: "Metro Supply", outlet: "Main Kitchen", totalValue: 31000, totalQty: 200, createdBy: "Ankit", createdOn: "2026-01-28", status: "Raised" },
-  { id: "PO-1004", vendor: "Fresh Direct", outlet: "Central Warehouse", totalValue: 12750, totalQty: 60, createdBy: "Meera", createdOn: "2026-01-25", status: "Raised" },
-  { id: "PO-1005", vendor: "Sysco Foods", outlet: "Main Kitchen", totalValue: 42000, totalQty: 310, createdBy: "Raj", createdOn: "2026-01-20", status: "Approved" },
-  { id: "PO-1006", vendor: "Metro Supply", outlet: "South Outlet", totalValue: 9500, totalQty: 55, createdBy: "Ankit", createdOn: "2026-01-18", status: "Approved" },
-  { id: "PO-1007", vendor: "US Foods", outlet: "Main Kitchen", totalValue: 38000, totalQty: 250, receivedQty: 180, pendingQty: 70, createdBy: "Meera", createdOn: "2026-01-10", lastReceivingDate: "2026-02-05", status: "Partially Received" },
-  { id: "PO-1008", vendor: "Fresh Direct", outlet: "Central Warehouse", totalValue: 15000, totalQty: 100, receivedQty: 60, pendingQty: 40, createdBy: "Raj", createdOn: "2026-01-08", lastReceivingDate: "2026-02-03", status: "Partially Received" },
-  { id: "PO-1009", vendor: "Sysco Foods", outlet: "Main Kitchen", totalValue: 27500, totalQty: 150, receivedQty: 150, createdBy: "Ankit", createdOn: "2025-12-20", closedDate: "2026-01-15", closedBy: "Meera", status: "Closed" },
-  { id: "PO-1010", vendor: "Metro Supply", outlet: "South Outlet", totalValue: 11200, totalQty: 75, receivedQty: 75, createdBy: "Raj", createdOn: "2025-12-15", closedDate: "2026-01-10", closedBy: "Ankit", status: "Closed" },
-  { id: "PO-1011", vendor: "US Foods", outlet: "Central Warehouse", totalValue: 8900, totalQty: 40, createdBy: "Meera", createdOn: "2025-12-10", cancelledDate: "2025-12-12", cancelledBy: "Ankit", status: "Cancelled" },
-  { id: "PO-1012", vendor: "Fresh Direct", outlet: "Main Kitchen", totalValue: 6200, totalQty: 30, createdBy: "Raj", createdOn: "2025-12-05", cancelledDate: "2025-12-06", cancelledBy: "Meera", status: "Cancelled" },
-];
+import { usePOStore, type PurchaseOrder, type POStatus } from "@/context/POStoreContext";
 
 const STATUS_COLOR: Record<POStatus, string> = {
   Drafted: "bg-muted text-muted-foreground",
@@ -79,14 +42,15 @@ const fmt = (n: number) =>
 
 export default function AllOrders() {
   const navigate = useNavigate();
+  const { orders, deleteOrder } = usePOStore();
   const [tab, setTab] = useState("drafted");
   const [search, setSearch] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<PORow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
 
   const activeStatus = TAB_KEY[tab];
 
   const rows = useMemo(() => {
-    return MOCK.filter((r) => {
+    return orders.filter((r) => {
       if (r.status !== activeStatus) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -94,14 +58,16 @@ export default function AllOrders() {
       }
       return true;
     });
-  }, [activeStatus, search]);
+  }, [orders, activeStatus, search]);
 
   const handleDelete = () => {
-    // In real implementation, delete from DB
+    if (deleteTarget) {
+      deleteOrder(deleteTarget.id);
+    }
     setDeleteTarget(null);
   };
 
-  const handleAction = (action: string, row: PORow) => {
+  const handleAction = (action: string, row: PurchaseOrder) => {
     switch (action) {
       case "view":
         navigate(`/procurements/all-orders/${row.id}`);
@@ -113,15 +79,12 @@ export default function AllOrders() {
         setDeleteTarget(row);
         break;
       case "cancel":
-        // In real implementation, update status
         break;
       case "close":
-        // In real implementation, update status
         break;
     }
   };
 
-  /* ───── column definitions per tab ───── */
   const renderColumns = () => {
     switch (tab) {
       case "drafted":
@@ -201,7 +164,7 @@ export default function AllOrders() {
     }
   };
 
-  const renderRow = (row: PORow) => {
+  const renderRow = (row: PurchaseOrder) => {
     const actions = getActions(tab);
     const actionMenu = (
       <DropdownMenu>
@@ -301,7 +264,6 @@ export default function AllOrders() {
 
   return (
     <div className="space-y-4 max-w-[1200px]">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="cento-page-title text-xl">Orders</h1>
         <Button variant="cento" onClick={() => navigate("/procurements/new-purchase")}>
@@ -309,7 +271,6 @@ export default function AllOrders() {
         </Button>
       </div>
 
-      {/* Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-muted/60 p-1 h-auto gap-0.5">
           <TabsTrigger value="drafted" className="text-xs px-3 py-1.5">Drafted</TabsTrigger>
@@ -320,7 +281,6 @@ export default function AllOrders() {
           <TabsTrigger value="cancelled" className="text-xs px-3 py-1.5">Cancelled</TabsTrigger>
         </TabsList>
 
-        {/* Search */}
         <div className="mt-3 mb-1">
           <div className="relative w-72">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -333,7 +293,6 @@ export default function AllOrders() {
           </div>
         </div>
 
-        {/* Shared table content for all tabs */}
         {Object.keys(TAB_KEY).map((key) => (
           <TabsContent key={key} value={key} className="mt-0">
             <div className="cento-card p-0 overflow-hidden">
@@ -358,7 +317,6 @@ export default function AllOrders() {
         ))}
       </Tabs>
 
-      {/* Delete Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -379,7 +337,6 @@ export default function AllOrders() {
   );
 }
 
-/* ───── actions per tab ───── */
 function getActions(tab: string) {
   switch (tab) {
     case "drafted":
