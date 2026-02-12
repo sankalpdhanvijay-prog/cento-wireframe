@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import {
   FilePlus,
@@ -30,7 +31,7 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
+import { usePOStore } from "@/context/POStoreContext";
 // --- Mock Data ---
 const MOCK_VENDORS = [
   { id: "v1", name: "Fresh Farms Pvt Ltd" },
@@ -92,6 +93,8 @@ interface POLineItem {
 }
 
 export default function NewPurchase() {
+  const navigate = useNavigate();
+  const { addOrder } = usePOStore();
   const [selectedOutlet, setSelectedOutlet] = useState("o1");
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -519,6 +522,41 @@ export default function NewPurchase() {
                     variant="outline"
                     disabled={!hasItems}
                     className={cn("bg-card", !hasItems && "opacity-40 cursor-not-allowed")}
+                    onClick={() => {
+                      if (!hasItems || !selectedVendorData) return;
+                      const outletName = MOCK_OUTLETS.find((o) => o.id === selectedOutlet)?.name ?? "Unknown";
+                      const now = format(new Date(), "yyyy-MM-dd");
+                      const materials = lineItems.map((li) => {
+                        const taxType = MOCK_TAX_TYPES.find((t) => t.id === li.taxTypeId);
+                        return {
+                          name: li.name,
+                          orderedQty: li.purchaseStock,
+                          unitPrice: li.buyingPrice,
+                          taxPct: taxType?.rate ?? 0,
+                          lineTotal: li.purchaseAmount,
+                          receivedQty: 0,
+                          pendingQty: li.purchaseStock,
+                        };
+                      });
+                      addOrder({
+                        vendor: selectedVendorData.name,
+                        outlet: outletName,
+                        totalValue: totals.grandTotal,
+                        totalQty: lineItems.reduce((s, li) => s + li.purchaseStock, 0),
+                        createdBy: "Admin",
+                        createdOn: now,
+                        lastUpdated: now,
+                        status: "Drafted",
+                        expectedDelivery: deliveryDate ? format(deliveryDate, "yyyy-MM-dd") : undefined,
+                        remarks,
+                        materials,
+                        poSubtotal: totals.purchaseTotal,
+                        totalTax: totals.taxTotal,
+                        grandTotal: totals.grandTotal,
+                      });
+                      toast({ title: "Draft saved", description: "Purchase order saved as draft." });
+                      navigate("/procurements/all-orders");
+                    }}
                   >
                     Draft
                   </Button>
