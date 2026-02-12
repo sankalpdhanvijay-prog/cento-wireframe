@@ -16,6 +16,7 @@ import POBasedReceiving from "./pages/procurements/receiving/POBasedReceiving";
 import DirectReceiving from "./pages/procurements/receiving/DirectReceiving";
 import ViewReceiving from "./pages/procurements/receiving/ViewReceiving";
 import AllOrders from "./pages/procurements/AllOrders";
+import ViewOrderDetails from "./pages/procurements/orders/ViewOrderDetails";
 import DispatchManagement from "./pages/operations/DispatchManagement";
 import ProductionManagement from "./pages/operations/ProductionManagement";
 import TransferManagement from "./pages/operations/TransferManagement";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/procurements/new-receiving/view/:id" element={<ViewReceiving />} />
             <Route path="/procurements/new-receiving/edit/:id" element={<POBasedReceiving />} />
             <Route path="/procurements/all-orders" element={<AllOrders />} />
+            <Route path="/procurements/all-orders/:id" element={<ViewOrderDetails />} />
             <Route path="/operations" element={<Navigate to="/operations/dispatches" replace />} />
             <Route path="/operations/dispatches" element={<DispatchManagement />} />
             <Route path="/operations/productions" element={<ProductionManagement />} />
