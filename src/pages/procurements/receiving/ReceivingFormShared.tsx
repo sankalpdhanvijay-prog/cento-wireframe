@@ -22,6 +22,15 @@ import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // --- Types ---
+export type TaxType = "GST" | "IGST" | "CGST" | "SGST";
+
+export const TAX_TYPE_PERCENT: Record<TaxType, number> = {
+  GST: 18,
+  IGST: 18,
+  CGST: 9,
+  SGST: 9,
+};
+
 export interface ReceivingMaterialRow {
   id: string;
   materialId: string;
@@ -31,6 +40,7 @@ export interface ReceivingMaterialRow {
   acceptedQty: number;
   poUnitPrice: number;
   invoiceUnitPrice: number;
+  taxType: TaxType | "";
   taxPercent: number;
   lineTotal: number;
   taxAmount: number;
@@ -49,6 +59,7 @@ export function createEmptyRow(
     acceptedQty: 0,
     poUnitPrice: 0,
     invoiceUnitPrice: 0,
+    taxType: "",
     taxPercent: 0,
     lineTotal: 0,
     taxAmount: 0,
