@@ -164,7 +164,7 @@ export default function DirectReceiving() {
       <div className="flex-1 space-y-5 overflow-auto pb-32 max-w-5xl">
         {/* Vendor Block */}
         <div className="cento-card">
-          <h3 className="cento-section-header mb-3">Vendor Details</h3>
+          <h3 className="cento-section-header mb-3">Receiving Details</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Vendor <span className="text-destructive">*</span></Label>
