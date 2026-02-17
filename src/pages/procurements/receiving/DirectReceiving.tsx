@@ -57,14 +57,14 @@ const MOCK_VENDORS = [
 ];
 
 const MOCK_MATERIALS = [
-  { id: "m1", name: "Basmati Rice", unit: "KG" },
-  { id: "m2", name: "Olive Oil (Extra Virgin)", unit: "LTR" },
-  { id: "m3", name: "Chicken Breast", unit: "KG" },
-  { id: "m4", name: "Onion (Red)", unit: "KG" },
-  { id: "m5", name: "Tomato Paste", unit: "KG" },
-  { id: "m6", name: "Cumin Powder", unit: "KG" },
-  { id: "m7", name: "Mozzarella Cheese", unit: "KG" },
-  { id: "m8", name: "All-Purpose Flour", unit: "KG" },
+  { id: "m1", name: "Basmati Rice", unit: "KG", lastPrice: 85 },
+  { id: "m2", name: "Olive Oil (Extra Virgin)", unit: "LTR", lastPrice: 620 },
+  { id: "m3", name: "Chicken Breast", unit: "KG", lastPrice: 280 },
+  { id: "m4", name: "Onion (Red)", unit: "KG", lastPrice: 35 },
+  { id: "m5", name: "Tomato Paste", unit: "KG", lastPrice: 150 },
+  { id: "m6", name: "Cumin Powder", unit: "KG", lastPrice: 450 },
+  { id: "m7", name: "Mozzarella Cheese", unit: "KG", lastPrice: 520 },
+  { id: "m8", name: "All-Purpose Flour", unit: "KG", lastPrice: 42 },
 ];
 
 export default function DirectReceiving() {
@@ -101,7 +101,7 @@ export default function DirectReceiving() {
     }
     setMaterials((prev) => [
       ...prev,
-      recalcRow(createEmptyRow({ id: crypto.randomUUID(), materialId: m.id, name: m.name, unit: m.unit }), false),
+      recalcRow(createEmptyRow({ id: crypto.randomUUID(), materialId: m.id, name: m.name, unit: m.unit, invoiceUnitPrice: m.lastPrice }), false),
     ]);
     setMaterialSearch("");
   }, [materials]);
