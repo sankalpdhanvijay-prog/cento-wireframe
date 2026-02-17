@@ -40,6 +40,8 @@ import {
   DirectSummaryBlock,
   recalcRow,
   createEmptyRow,
+  TAX_TYPE_PERCENT,
+  type TaxType,
   type ReceivingMaterialRow } from
 "./ReceivingFormShared";
 
@@ -243,18 +245,21 @@ export default function DirectReceiving() {
 
           <div className="overflow-x-auto">
               <div className="min-w-[700px]">
-                <div className="grid grid-cols-[1.5fr_80px_100px_60px_90px_80px_90px_36px] gap-2 px-4 py-2.5 bg-muted/30 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  <span>Item Name</span>
+                <div className="grid grid-cols-[80px_1.5fr_80px_100px_90px_60px_90px_80px_90px_36px] gap-2 px-4 py-2.5 bg-muted/30 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span>Material Id</span>
+                  <span>Material Name</span>
                   <span>Accepted</span>
                   <span>Invoice Price</span>
+                  <span>Tax Type</span>
                   <span>Tax %</span>
-                  <span className="text-right">Line Total</span>
+                  <span className="text-right">Stock Price Total</span>
                   <span className="text-right">Tax Amt</span>
                   <span className="text-right">Total</span>
                   <span></span>
                 </div>
                 {materials.map((row) =>
-              <div key={row.id} className="grid grid-cols-[1.5fr_80px_100px_60px_90px_80px_90px_36px] gap-2 px-4 py-3 items-center border-b border-border/40">
+              <div key={row.id} className="grid grid-cols-[80px_1.5fr_80px_100px_90px_60px_90px_80px_90px_36px] gap-2 px-4 py-3 items-center border-b border-border/40">
+                    <span className="text-xs text-muted-foreground font-mono">{row.materialId}</span>
                     <span className="text-sm font-medium text-foreground">{row.name}
                       <span className="text-xs text-muted-foreground ml-1.5">{row.unit}</span>
                     </span>
@@ -273,13 +278,27 @@ export default function DirectReceiving() {
                   onChange={(e) => updateMaterial(row.id, { invoiceUnitPrice: parseFloat(e.target.value) || 0 })}
                   className="h-8 text-sm text-right bg-card" />
 
+                    <Select
+                  value={row.taxType}
+                  onValueChange={(v) => {
+                    const taxType = v as TaxType;
+                    updateMaterial(row.id, { taxType, taxPercent: TAX_TYPE_PERCENT[taxType] });
+                  }}>
+                      <SelectTrigger className="h-8 text-xs bg-card">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(["GST", "IGST", "CGST", "SGST"] as TaxType[]).map((t) => (
+                          <SelectItem key={t} value={t}>{t}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
                     <Input
                   type="number"
-                  min={0}
-                  step={0.1}
                   value={row.taxPercent || ""}
-                  onChange={(e) => updateMaterial(row.id, { taxPercent: parseFloat(e.target.value) || 0 })}
-                  className="h-8 text-sm text-right bg-card" />
+                  disabled
+                  className="h-8 text-sm text-right bg-muted/50" />
 
                     <span className="text-sm text-foreground text-right">₹{row.lineTotal.toFixed(2)}</span>
                     <span className="text-sm text-muted-foreground text-right">₹{row.taxAmount.toFixed(2)}</span>
