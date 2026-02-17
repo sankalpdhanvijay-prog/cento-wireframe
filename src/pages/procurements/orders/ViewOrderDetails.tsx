@@ -16,6 +16,7 @@ const STATUS_COLOR: Record<POStatus, string> = {
   Raised: "bg-emerald-50 text-emerald-700 border-emerald-200",
   Approved: "bg-blue-50 text-blue-700 border-blue-200",
   "Partially Received": "bg-amber-50 text-amber-700 border-amber-200",
+  Received: "bg-green-50 text-green-700 border-green-200",
   Closed: "bg-neutral-100 text-neutral-600 border-neutral-300",
   Cancelled: "bg-red-50 text-red-600 border-red-200",
 };

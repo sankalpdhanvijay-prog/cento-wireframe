@@ -25,6 +25,7 @@ const STATUS_COLOR: Record<POStatus, string> = {
   Raised: "bg-emerald-50 text-emerald-700 border-emerald-200",
   Approved: "bg-blue-50 text-blue-700 border-blue-200",
   "Partially Received": "bg-amber-50 text-amber-700 border-amber-200",
+  Received: "bg-green-50 text-green-700 border-green-200",
   Closed: "bg-neutral-100 text-neutral-600 border-neutral-300",
   Cancelled: "bg-red-50 text-red-600 border-red-200",
 };
@@ -34,6 +35,7 @@ const TAB_KEY: Record<string, POStatus> = {
   raised: "Raised",
   approved: "Approved",
   partial: "Partially Received",
+  received: "Received",
   closed: "Closed",
   cancelled: "Cancelled",
 };
@@ -118,6 +120,7 @@ export default function AllOrders() {
           </>
         );
       case "partial":
+      case "received":
         return (
           <>
             <TableHead className="w-[100px]">PO ID</TableHead>
@@ -216,6 +219,7 @@ export default function AllOrders() {
           </TableRow>
         );
       case "partial":
+      case "received":
         return (
           <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/procurements/all-orders/${row.id}`)}>
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
@@ -278,6 +282,7 @@ export default function AllOrders() {
           <TabsTrigger value="raised" className="text-xs px-3 py-1.5">Raised</TabsTrigger>
           <TabsTrigger value="approved" className="text-xs px-3 py-1.5">Approved</TabsTrigger>
           <TabsTrigger value="partial" className="text-xs px-3 py-1.5">Partially Received</TabsTrigger>
+          <TabsTrigger value="received" className="text-xs px-3 py-1.5">Received</TabsTrigger>
           <TabsTrigger value="closed" className="text-xs px-3 py-1.5">Closed</TabsTrigger>
           <TabsTrigger value="cancelled" className="text-xs px-3 py-1.5">Cancelled</TabsTrigger>
         </TabsList>
@@ -357,6 +362,11 @@ function getActions(tab: string) {
         { key: "cancel", label: "Cancel PO", icon: XCircle, destructive: true },
       ];
     case "partial":
+      return [
+        { key: "view", label: "View Details", icon: Eye, destructive: false },
+        { key: "close", label: "Close PO", icon: Lock, destructive: false },
+      ];
+    case "received":
       return [
         { key: "view", label: "View Details", icon: Eye, destructive: false },
         { key: "close", label: "Close PO", icon: Lock, destructive: false },

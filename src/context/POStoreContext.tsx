@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import { format } from "date-fns";
 
 /* ───── Shared Types ───── */
-export type POStatus = "Drafted" | "Raised" | "Approved" | "Partially Received" | "Closed" | "Cancelled";
+export type POStatus = "Drafted" | "Raised" | "Approved" | "Partially Received" | "Received" | "Closed" | "Cancelled";
 
 export interface POLineItem {
   name: string;
