@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import {
-  Plus, MoreHorizontal, Search, Eye, Pencil, Trash2, XCircle, Lock,
+  MoreHorizontal, Search, Eye, Pencil, Trash2, XCircle, Lock,
 } from "lucide-react";
 import { usePOStore, type PurchaseOrder, type POStatus } from "@/context/POStoreContext";
 
@@ -266,9 +266,6 @@ export default function AllOrders() {
     <div className="space-y-4 max-w-[1200px]">
       <div className="flex items-center justify-between">
         <h1 className="cento-page-title text-xl">Orders</h1>
-        <Button variant="cento" onClick={() => navigate("/procurements/new-purchase")}>
-          <Plus className="h-4 w-4" /> Raise PO
-        </Button>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>

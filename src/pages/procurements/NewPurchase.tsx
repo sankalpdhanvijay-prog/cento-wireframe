@@ -55,10 +55,10 @@ const MOCK_MATERIALS = [
 ];
 
 const MOCK_TAX_TYPES = [
-  { id: "t1", name: "GST 5%", rate: 5 },
-  { id: "t2", name: "GST 12%", rate: 12 },
-  { id: "t3", name: "GST 18%", rate: 18 },
-  { id: "t4", name: "GST 28%", rate: 28 },
+  { id: "t1", name: "GST", rate: 18 },
+  { id: "t2", name: "IGST", rate: 18 },
+  { id: "t3", name: "SGST", rate: 9 },
+  { id: "t4", name: "CGST", rate: 9 },
 ];
 
 const MOCK_CATEGORIES = [
@@ -88,6 +88,7 @@ interface POLineItem {
   purchaseAmount: number;
   isTaxable: boolean;
   taxTypeId: string;
+  taxValue: number;
   taxAmount: number;
   totalAmount: number;
 }
@@ -97,12 +98,27 @@ export default function NewPurchase() {
   const { addOrder } = usePOStore();
   const [selectedOutlet, setSelectedOutlet] = useState("o1");
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
+  const [vendorSearch, setVendorSearch] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [lineItems, setLineItems] = useState<POLineItem[]>([]);
   const [deliveryDate, setDeliveryDate] = useState<Date>();
   const [remarks, setRemarks] = useState("");
   const isAdmin = true; // mock role
+
+  const filteredVendors = useMemo(() => {
+    if (!vendorSearch.trim()) return MOCK_VENDORS;
+    const q = vendorSearch.toLowerCase();
+    return MOCK_VENDORS.filter((v) => v.name.toLowerCase().includes(q));
+  }, [vendorSearch]);
+
+  const handleVendorChange = useCallback((vendorId: string) => {
+    if (selectedVendor && selectedVendor !== vendorId && lineItems.length > 0) {
+      setLineItems([]);
+      toast({ title: "Materials cleared", description: "Vendor changed — please re-add materials for the new vendor." });
+    }
+    setSelectedVendor(vendorId);
+  }, [selectedVendor, lineItems.length]);
 
   const selectedVendorData = MOCK_VENDORS.find((v) => v.id === selectedVendor);
 
@@ -134,6 +150,7 @@ export default function NewPurchase() {
         purchaseAmount: 0,
         isTaxable: false,
         taxTypeId: "",
+        taxValue: 0,
         taxAmount: 0,
         totalAmount: 0,
       };
@@ -149,14 +166,21 @@ export default function NewPurchase() {
 
   const recalcRow = useCallback((item: POLineItem): POLineItem => {
     const purchaseAmount = item.buyingPrice * item.purchaseStock;
+    let taxValue = item.taxValue;
     let taxAmount = 0;
     if (item.isTaxable && item.taxTypeId) {
       const tax = MOCK_TAX_TYPES.find((t) => t.id === item.taxTypeId);
-      if (tax) taxAmount = (purchaseAmount * tax.rate) / 100;
+      if (tax) {
+        taxValue = tax.rate;
+        taxAmount = (purchaseAmount * tax.rate) / 100;
+      }
+    } else {
+      taxValue = 0;
     }
     return {
       ...item,
       purchaseAmount,
+      taxValue,
       taxAmount,
       totalAmount: purchaseAmount + taxAmount,
     };
@@ -233,13 +257,22 @@ export default function NewPurchase() {
 
           {/* Vendor List */}
           <div className="cento-card flex-1 flex flex-col min-h-0 !p-3">
-            <h3 className="cento-section-header mb-3 px-2">Vendors</h3>
+            <h3 className="cento-section-header mb-2 px-2">Vendors</h3>
+            <div className="relative px-2 mb-2">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                value={vendorSearch}
+                onChange={(e) => setVendorSearch(e.target.value)}
+                placeholder="Search vendors..."
+                className="pl-8 h-8 text-xs bg-card"
+              />
+            </div>
             <ScrollArea className="flex-1">
               <div className="space-y-1.5">
-                {MOCK_VENDORS.map((vendor) => (
+                {filteredVendors.map((vendor) => (
                   <button
                     key={vendor.id}
-                    onClick={() => setSelectedVendor(vendor.id)}
+                    onClick={() => handleVendorChange(vendor.id)}
                     className={cn(
                       "w-full flex items-center justify-between rounded-lg px-3 py-3 text-sm font-medium transition-all text-left",
                       selectedVendor === vendor.id
@@ -251,6 +284,9 @@ export default function NewPurchase() {
                     <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   </button>
                 ))}
+                {filteredVendors.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">No vendors found</p>
+                )}
               </div>
             </ScrollArea>
           </div>
@@ -353,7 +389,7 @@ export default function NewPurchase() {
 
               {/* Material Table */}
               <div className="cento-card flex-1 !p-0 min-h-0 overflow-auto">
-                <table className="w-full text-sm min-w-[1100px]">
+                <table className="w-full text-sm min-w-[1200px]">
                   <thead>
                     <tr className="border-b bg-muted/30">
                       {[
@@ -366,7 +402,8 @@ export default function NewPurchase() {
                         "Purchase Stock",
                         "Purchase Amt",
                         "Taxable",
-                        "Tax Type",
+                        "Tax Name",
+                        "Tax Value",
                         "Tax Amt",
                         "Total Amt",
                         "",
@@ -476,6 +513,9 @@ export default function NewPurchase() {
                               ))}
                             </SelectContent>
                           </Select>
+                        </td>
+                        <td className="px-3 py-2 text-right text-muted-foreground">
+                          {item.isTaxable && item.taxTypeId ? `${item.taxValue}%` : "—"}
                         </td>
                         <td className="px-3 py-2 text-right text-muted-foreground">
                           ₹{item.taxAmount.toFixed(2)}
