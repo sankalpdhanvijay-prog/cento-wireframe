@@ -19,7 +19,7 @@ const getDomainInfo = (pathname: string) => {
   // Common CTAs for sub-module pages
   if (sub) {
     const subCtaMap: Record<string, string> = {
-      "/procurements/new-purchase": "Create PO",
+      "/procurements/new-purchase": "",
       "/operations/dispatches": "New Dispatch",
       "/operations/productions": "New Production",
       "/entities/materials": "Add Material",
