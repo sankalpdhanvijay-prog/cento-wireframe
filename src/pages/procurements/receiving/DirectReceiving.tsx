@@ -75,7 +75,7 @@ export default function DirectReceiving() {
   const [receivingDate, setReceivingDate] = useState<Date>(new Date());
   const [vendor, setVendor] = useState<string>("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState<Date>();
+  const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [reference, setReference] = useState("");
   const [materials, setMaterials] = useState<ReceivingMaterialRow[]>([]);
   const [materialSearch, setMaterialSearch] = useState("");
@@ -124,7 +124,7 @@ export default function DirectReceiving() {
   }, [materials]);
 
   const hasAccepted = materials.some((r) => r.acceptedQty > 0);
-  const canSubmit = hasAccepted && !!vendor && materials.length > 0;
+  const canSubmit = hasAccepted && !!vendor && !!invoiceDate && materials.length > 0;
 
   return (
     <div className="flex flex-col h-full">
@@ -190,12 +190,12 @@ export default function DirectReceiving() {
               <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="Optional" className="bg-card" />
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Invoice Date</Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Invoice Date <span className="text-destructive">*</span></Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-card", !invoiceDate && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {invoiceDate ? format(invoiceDate, "dd MMM yyyy") : "Optional"}
+                    {invoiceDate ? format(invoiceDate, "dd MMM yyyy") : "Select date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
