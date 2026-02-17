@@ -151,17 +151,11 @@ export default function DirectReceiving() {
             </Select>
             <span className="text-xs text-muted-foreground font-mono">{receivingId}</span>
             <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">Draft</Badge>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 text-xs bg-card font-normal">
-                  <CalendarIcon className="h-3 w-3 mr-1" />
-                  {format(receivingDate, "dd MMM yyyy")}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={receivingDate} onSelect={(d) => d && setReceivingDate(d)} className="p-3 pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-muted/40">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">PO Creation Date</span>
+              <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">{format(receivingDate, "dd MMM yyyy")}</span>
+            </div>
           </div>
           <Badge variant="outline" className="text-[10px] border-border bg-muted/50 text-muted-foreground">Direct Receiving</Badge>
         </div>
