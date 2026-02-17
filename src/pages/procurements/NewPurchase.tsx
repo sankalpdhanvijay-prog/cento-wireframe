@@ -295,7 +295,7 @@ export default function NewPurchase() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onFocus={() => setSearchFocused(true)}
                     onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-                    placeholder="Search materials..."
+                    placeholder="Search materials associated with vendor..."
                     className="pl-9 bg-card"
                   />
                   {/* Search dropdown */}
