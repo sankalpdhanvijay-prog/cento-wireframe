@@ -199,7 +199,7 @@ export default function DirectReceiving() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground mb-1.5 block">Reference Invoice File</Label>
-              <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" className="bg-card" />
+              <Input type="url" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" className="bg-card" />
             </div>
           </div>
         </div>
