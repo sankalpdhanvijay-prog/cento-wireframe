@@ -198,7 +198,7 @@ export default function DirectReceiving() {
               </Popover>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Reference</Label>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Other remarks</Label>
               <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" className="bg-card" />
             </div>
           </div>
