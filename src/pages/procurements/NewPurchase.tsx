@@ -792,7 +792,7 @@ export default function NewPurchase() {
           <div className="flex-[2] flex flex-col gap-4">
             {/* PO Summary Card */}
             <div className="bg-card border border-border rounded-xl shadow-sm p-6">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">📦 PO Summary</p>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">PO Summary</p>
 
               <div className="space-y-3">
                 {/* Subtotal */}
