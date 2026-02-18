@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Calendar } from "@/components/ui/calendar";
 import {
   Select,
@@ -448,7 +448,7 @@ export default function NewPurchase() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-y-auto">
       {/* Page Header */}
       <div className="flex items-center gap-3 mb-4 flex-shrink-0">
         <div className="h-9 w-9 rounded-xl bg-cento-yellow-tint-strong flex items-center justify-center">
@@ -460,35 +460,35 @@ export default function NewPurchase() {
         </div>
       </div>
 
-      {/* Two-panel layout */}
-      <div className="flex gap-4 flex-1 min-h-0">
-        {/* LEFT PANEL */}
-        <div className="w-[340px] flex-shrink-0 flex flex-col gap-4">
-          {/* Outlet Selector */}
-          <div className="cento-card">
-            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
-              Select Outlet
-            </Label>
-            <Select value={selectedOutlet} onValueChange={setSelectedOutlet} disabled={!isAdmin}>
-              <SelectTrigger className="bg-card">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                  <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {MOCK_OUTLETS.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* ROW 1: Outlet + Vendor side by side */}
+      <div className="flex gap-4 mb-4 flex-shrink-0">
+        {/* Outlet Selector */}
+        <div className="cento-card w-[260px] flex-shrink-0">
+          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
+            Select Outlet
+          </Label>
+          <Select value={selectedOutlet} onValueChange={setSelectedOutlet} disabled={!isAdmin}>
+            <SelectTrigger className="bg-card">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              {MOCK_OUTLETS.map((o) => (
+                <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          {/* Vendor List */}
-          <div className="cento-card flex-1 flex flex-col min-h-0 !p-3">
-            <h3 className="cento-section-header mb-2 px-2">Vendors</h3>
-            <div className="relative px-2 mb-2">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        {/* Vendor selector */}
+        <div className="cento-card flex-1 !p-3 flex flex-col">
+          <h3 className="cento-section-header mb-2 px-1">Vendor</h3>
+          <div className="flex gap-3 items-start">
+            {/* Search */}
+            <div className="relative w-56 flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 value={vendorSearch}
                 onChange={(e) => setVendorSearch(e.target.value)}
@@ -496,32 +496,255 @@ export default function NewPurchase() {
                 className="pl-8 h-8 text-xs bg-card"
               />
             </div>
-            <ScrollArea className="flex-1">
-              <div className="space-y-1.5">
-                {filteredVendors.map((vendor) => (
+            {/* Vendor chips row */}
+            <div className="flex flex-wrap gap-1.5 flex-1">
+              {filteredVendors.map((vendor) => (
+                <button
+                  key={vendor.id}
+                  onClick={() => handleVendorClick(vendor.id)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all border",
+                    selectedVendor === vendor.id
+                      ? "bg-cento-yellow-tint-strong border-border shadow-sm text-foreground"
+                      : "bg-card border-border hover:bg-muted/60 text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {vendor.name}
+                  {selectedVendor === vendor.id && <ChevronRight className="h-3 w-3" />}
+                </button>
+              ))}
+              {filteredVendors.length === 0 && (
+                <p className="text-xs text-muted-foreground py-1">No vendors found</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ROW 2: Action bar — shown once vendor is selected */}
+      {selectedVendor && (
+        <div className="flex items-end gap-3 mb-3 flex-shrink-0 flex-wrap">
+          {/* Material Search */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
+              placeholder="Search materials..."
+              className="pl-9 bg-card"
+            />
+            {searchFocused && filteredMaterials.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-[240px] overflow-auto">
+                {filteredMaterials.map((m) => (
                   <button
-                    key={vendor.id}
-                    onClick={() => handleVendorClick(vendor.id)}
-                    className={cn(
-                      "w-full flex items-center justify-between rounded-lg px-3 py-3 text-sm font-medium transition-all text-left",
-                      selectedVendor === vendor.id
-                        ? "bg-cento-yellow-tint-strong shadow-sm border border-border"
-                        : "hover:bg-muted/60"
-                    )}
+                    key={m.id}
+                    onMouseDown={() => addMaterial(m)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left"
                   >
-                    <span className="truncate">{vendor.name}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="text-muted-foreground font-mono text-xs w-16 flex-shrink-0">{m.code}</span>
+                    <span className="font-medium truncate">{m.name}</span>
                   </button>
                 ))}
-                {filteredVendors.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">No vendors found</p>
-                )}
               </div>
-            </ScrollArea>
+            )}
           </div>
 
+          {/* Add from Template */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-card flex items-center gap-1.5"
+            onClick={() => {
+              setTemplateVendorId(selectedVendor ?? "");
+              setSelectedTemplateId("");
+              setTemplateModalOpen(true);
+            }}
+          >
+            <FileText className="h-3.5 w-3.5" />
+            Add from Template
+          </Button>
+
+          {/* EDD */}
+          <div className="flex flex-col gap-0.5">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-[210px] justify-start text-left font-normal bg-card",
+                    !deliveryDate && "text-muted-foreground",
+                    eddError && "border-destructive"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {deliveryDate ? format(deliveryDate, "PPP") : (
+                    <span>Expected Delivery Date <span className="text-destructive">*</span></span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={deliveryDate}
+                  onSelect={(d) => { setDeliveryDate(d); if (d) setEddError(false); }}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                  disabled={(date) => date < new Date()}
+                />
+              </PopoverContent>
+            </Popover>
+            {eddError && (
+              <p className="text-xs text-destructive">Expected Delivery Date is required.</p>
+            )}
+          </div>
+
+          {/* Selected vendor badge */}
+          <div className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cento-yellow-tint text-xs font-medium text-foreground border border-border">
+            <span className="text-muted-foreground">Vendor:</span>
+            <span>{selectedVendorData?.name}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ROW 3: Materials Table — full width */}
+      {selectedVendor ? (
+        <div className="cento-card !p-0 flex-shrink-0 mb-4">
+          {/* Table header */}
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/20">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Materials ({lineItems.length})
+            </span>
+            {hasItems && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1.5 bg-card"
+                onClick={() => { setBulkTaxTypeId(""); setBulkApplyMode("all"); setBulkTaxModalOpen(true); }}
+              >
+                <Tag className="h-3 w-3" />
+                Apply Tax to All
+              </Button>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[1100px]">
+              <thead>
+                <tr className="border-b bg-muted/20">
+                  {["Code", "Material", "Category", "Unit", "Current Stock", "Buying Price", "Purchase Stock", "Purchase Amt", "Taxes", "Total Amt", ""].map((h) => (
+                    <th
+                      key={h}
+                      className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {lineItems.length === 0 && (
+                  <tr>
+                    <td colSpan={11} className="text-center text-muted-foreground text-sm py-10">
+                      Search for materials above to add them to this PO
+                    </td>
+                  </tr>
+                )}
+                {lineItems.map((item) => (
+                  <tr key={item.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors align-top">
+                    <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap pt-3">{item.code}</td>
+                    <td className="px-3 py-2 font-medium whitespace-nowrap pt-3">{item.name}</td>
+                    <td className="px-3 py-2">
+                      <Select value={item.category} onValueChange={(val) => updateItem(item.id, { category: val })}>
+                        <SelectTrigger className="w-28 h-8 text-xs bg-card"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {MOCK_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <Select value={item.unit} onValueChange={(val) => updateItem(item.id, { unit: val })}>
+                        <SelectTrigger className="w-24 h-8 text-xs bg-card"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {MOCK_UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </td>
+                    <td className="px-3 py-2 text-muted-foreground text-right pt-3">{item.currentStock}</td>
+                    <td className="px-3 py-2 text-right pt-3">₹{item.buyingPrice.toFixed(2)}</td>
+                    <td className="px-3 py-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={item.purchaseStock || ""}
+                        onChange={(e) => updateItem(item.id, { purchaseStock: parseFloat(e.target.value) || 0 })}
+                        className="w-20 h-8 text-sm text-right bg-card"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium pt-3">₹{item.purchaseAmount.toFixed(2)}</td>
+
+                    {/* Taxes column */}
+                    <td className="px-3 py-2 min-w-[160px]">
+                      <div className="flex flex-col gap-1">
+                        {item.taxes.map((t) => (
+                          <div key={t.id} className="flex items-center gap-1 group">
+                            <Badge variant="secondary" className="text-xs font-normal gap-1 pr-1">
+                              {t.taxName} {t.taxRate}%
+                              <button
+                                onClick={() => removeTaxFromItem(item.id, t.id)}
+                                className="ml-0.5 opacity-50 hover:opacity-100"
+                              >
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">₹{t.taxAmount.toFixed(0)}</span>
+                          </div>
+                        ))}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs justify-start px-2 text-primary hover:text-primary/80 w-fit"
+                          onClick={() => openTaxModal(item.id)}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Tax
+                        </Button>
+                      </div>
+                    </td>
+
+                    <td className="px-3 py-2 text-right font-semibold pt-3">₹{item.totalAmount.toFixed(2)}</td>
+                    <td className="px-3 py-2 pt-2">
+                      <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-destructive/10 transition-colors">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* Empty state when no vendor selected */
+        <div className="cento-card flex items-center justify-center py-16 mb-4">
+          <div className="text-center">
+            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
+              <FilePlus className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+            </div>
+            <p className="text-sm font-medium text-foreground">Select a vendor to get started</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Choose a vendor above to begin adding materials
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ROW 4: PO Remarks + PO Summary */}
+      {selectedVendor && (
+        <div className="flex gap-4 mb-6 flex-shrink-0 items-start">
           {/* PO Remarks */}
-          <div className="cento-card">
+          <div className="cento-card flex-1">
             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">
               PO Remarks
             </Label>
@@ -532,300 +755,82 @@ export default function NewPurchase() {
               className="min-h-[80px] resize-none bg-card text-sm"
             />
           </div>
-        </div>
 
-        {/* RIGHT PANEL */}
-        <div className="flex-1 flex flex-col min-h-0 min-w-0">
-          {!selectedVendor ? (
-            <div className="cento-card flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
-                  <FilePlus className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
+          {/* PO Summary + CTAs */}
+          <div className="flex flex-col gap-3 min-w-[380px]">
+            <div className="cento-card !py-5 !px-6 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">📦 PO Summary</p>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="font-medium">₹{totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+              </div>
+
+              {/* Total Tax with collapsible breakdown */}
+              <div>
+                <div className="flex justify-between text-sm items-center">
+                  <button
+                    onClick={() => setTaxBreakdownOpen((v) => !v)}
+                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <span>Total Tax</span>
+                    {Object.keys(totals.taxBreakdown).length > 0 && (
+                      taxBreakdownOpen
+                        ? <ChevronUp className="h-3.5 w-3.5" />
+                        : <ChevronDown className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                  <span className="font-medium">₹{totals.totalTax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                 </div>
-                <p className="text-sm font-medium text-foreground">Select a vendor</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Choose a vendor from the list to start adding materials
-                </p>
+                {taxBreakdownOpen && Object.keys(totals.taxBreakdown).length > 0 && (
+                  <div className="mt-1.5 ml-3 space-y-1 border-l-2 border-border pl-3">
+                    {Object.entries(totals.taxBreakdown).map(([name, amt]) => (
+                      <div key={name} className="flex justify-between text-xs text-muted-foreground">
+                        <span>{name}</span>
+                        <span>→ ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {Object.keys(totals.taxBreakdown).length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-0.5 ml-1">No taxes applied</p>
+                )}
+              </div>
+
+              <div className="border-t border-border my-1" />
+              <div className="flex justify-between text-lg font-bold rounded-md bg-cento-yellow-tint px-3 py-2.5 -mx-1">
+                <span>Total PO Amount</span>
+                <span className="text-xl">₹{totals.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
-          ) : (
-            <>
-              {/* Top bar: search, EDD, template, vendor badge */}
-              <div className="flex items-end gap-3 mb-3 flex-shrink-0 flex-wrap">
-                {/* Material Search */}
-                <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onFocus={() => setSearchFocused(true)}
-                    onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-                    placeholder="Search materials..."
-                    className="pl-9 bg-card"
-                  />
-                  {searchFocused && filteredMaterials.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-[240px] overflow-auto">
-                      {filteredMaterials.map((m) => (
-                        <button
-                          key={m.id}
-                          onMouseDown={() => addMaterial(m)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left"
-                        >
-                          <span className="text-muted-foreground font-mono text-xs w-16 flex-shrink-0">{m.code}</span>
-                          <span className="font-medium truncate">{m.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
-                {/* Add from Template */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-card flex items-center gap-1.5"
-                  onClick={() => {
-                    setTemplateVendorId(selectedVendor ?? "");
-                    setSelectedTemplateId("");
-                    setTemplateModalOpen(true);
-                  }}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Add from Template
-                </Button>
-
-                {/* EDD */}
-                <div className="flex flex-col gap-0.5">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-[210px] justify-start text-left font-normal bg-card",
-                          !deliveryDate && "text-muted-foreground",
-                          eddError && "border-destructive"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {deliveryDate ? format(deliveryDate, "PPP") : (
-                          <span>Expected Delivery Date <span className="text-destructive">*</span></span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={deliveryDate}
-                        onSelect={(d) => { setDeliveryDate(d); if (d) setEddError(false); }}
-                        initialFocus
-                        className="p-3 pointer-events-auto"
-                        disabled={(date) => date < new Date()}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {eddError && (
-                    <p className="text-xs text-destructive">Expected Delivery Date is required.</p>
-                  )}
-                </div>
-
-                {/* Vendor badge */}
-                <div className="text-xs text-muted-foreground ml-auto flex-shrink-0">
-                  Vendor: <span className="font-medium text-foreground">{selectedVendorData?.name}</span>
-                </div>
-              </div>
-
-              {/* Material Table */}
-              <div className="cento-card flex-1 !p-0 min-h-0 overflow-auto">
-                {/* Table header with bulk tax CTA */}
-                <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/20">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Materials ({lineItems.length})
-                  </span>
-                  {hasItems && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs gap-1.5 bg-card"
-                      onClick={() => { setBulkTaxTypeId(""); setBulkApplyMode("all"); setBulkTaxModalOpen(true); }}
-                    >
-                      <Tag className="h-3 w-3" />
-                      Apply Tax to All
-                    </Button>
-                  )}
-                </div>
-
-                <table className="w-full text-sm min-w-[1100px]">
-                  <thead>
-                    <tr className="border-b bg-muted/20">
-                      {["Code", "Material", "Category", "Unit", "Current Stock", "Buying Price", "Purchase Stock", "Purchase Amt", "Taxes", "Total Amt", ""].map((h) => (
-                        <th
-                          key={h}
-                          className="px-3 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lineItems.length === 0 && (
-                      <tr>
-                        <td colSpan={11} className="text-center text-muted-foreground text-sm py-10">
-                          Search for materials above to add them to this PO
-                        </td>
-                      </tr>
-                    )}
-                    {lineItems.map((item) => (
-                      <tr key={item.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors align-top">
-                        <td className="px-3 py-2 font-mono text-xs text-muted-foreground whitespace-nowrap pt-3">{item.code}</td>
-                        <td className="px-3 py-2 font-medium whitespace-nowrap pt-3">{item.name}</td>
-                        <td className="px-3 py-2">
-                          <Select value={item.category} onValueChange={(val) => updateItem(item.id, { category: val })}>
-                            <SelectTrigger className="w-28 h-8 text-xs bg-card"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {MOCK_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-3 py-2">
-                          <Select value={item.unit} onValueChange={(val) => updateItem(item.id, { unit: val })}>
-                            <SelectTrigger className="w-24 h-8 text-xs bg-card"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {MOCK_UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-3 py-2 text-muted-foreground text-right pt-3">{item.currentStock}</td>
-                        <td className="px-3 py-2 text-right pt-3">₹{item.buyingPrice.toFixed(2)}</td>
-                        <td className="px-3 py-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            value={item.purchaseStock || ""}
-                            onChange={(e) => updateItem(item.id, { purchaseStock: parseFloat(e.target.value) || 0 })}
-                            className="w-20 h-8 text-sm text-right bg-card"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-right font-medium pt-3">₹{item.purchaseAmount.toFixed(2)}</td>
-
-                        {/* Taxes column */}
-                        <td className="px-3 py-2 min-w-[160px]">
-                          <div className="flex flex-col gap-1">
-                            {item.taxes.map((t) => (
-                              <div key={t.id} className="flex items-center gap-1 group">
-                                <Badge variant="secondary" className="text-xs font-normal gap-1 pr-1">
-                                  {t.taxName} {t.taxRate}%
-                                  <button
-                                    onClick={() => removeTaxFromItem(item.id, t.id)}
-                                    className="ml-0.5 opacity-50 hover:opacity-100"
-                                  >
-                                    <X className="h-2.5 w-2.5" />
-                                  </button>
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">₹{t.taxAmount.toFixed(0)}</span>
-                              </div>
-                            ))}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs justify-start px-2 text-primary hover:text-primary/80 w-fit"
-                              onClick={() => openTaxModal(item.id)}
-                            >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Add Tax
-                            </Button>
-                          </div>
-                        </td>
-
-                        <td className="px-3 py-2 text-right font-semibold pt-3">₹{item.totalAmount.toFixed(2)}</td>
-                        <td className="px-3 py-2 pt-2">
-                          <button onClick={() => removeItem(item.id)} className="p-1 rounded hover:bg-destructive/10 transition-colors">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* PO Summary + CTAs */}
-              <div className="flex flex-col items-end mt-3 flex-shrink-0 gap-3">
-                {/* PO Summary card */}
-                <div className="cento-card !py-5 !px-6 space-y-3 min-w-[380px]">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">📦 PO Summary</p>
-
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">₹{totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-                  </div>
-
-                  {/* Total Tax with collapsible breakdown */}
-                  <div>
-                    <div className="flex justify-between text-sm items-center">
-                      <button
-                        onClick={() => setTaxBreakdownOpen((v) => !v)}
-                        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <span>Total Tax</span>
-                        {Object.keys(totals.taxBreakdown).length > 0 && (
-                          taxBreakdownOpen
-                            ? <ChevronUp className="h-3.5 w-3.5" />
-                            : <ChevronDown className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                      <span className="font-medium">₹{totals.totalTax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    {taxBreakdownOpen && Object.keys(totals.taxBreakdown).length > 0 && (
-                      <div className="mt-1.5 ml-3 space-y-1 border-l-2 border-border pl-3">
-                        {Object.entries(totals.taxBreakdown).map(([name, amt]) => (
-                          <div key={name} className="flex justify-between text-xs text-muted-foreground">
-                            <span>{name}</span>
-                            <span>→ ₹{amt.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {Object.keys(totals.taxBreakdown).length === 0 && (
-                      <p className="text-xs text-muted-foreground mt-0.5 ml-1">No taxes applied</p>
-                    )}
-                  </div>
-
-                  <div className="border-t border-border my-1" />
-                  <div className="flex justify-between text-lg font-bold rounded-md bg-cento-yellow-tint px-3 py-2.5 -mx-1">
-                    <span>Total PO Amount</span>
-                    <span className="text-xl">₹{totals.grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
-
-                {/* CTAs */}
-                <div className="flex gap-2 items-center">
-                  {!deliveryDate && (
-                    <p className="text-xs text-muted-foreground mr-1">Complete required fields to generate PO.</p>
-                  )}
-                  <Button
-                    variant="outline"
-                    disabled={!hasItems}
-                    className={cn("bg-card", !hasItems && "opacity-40 cursor-not-allowed")}
-                    onClick={handleDraft}
-                  >
-                    Draft
-                  </Button>
-                  <Button
-                    variant="cento"
-                    disabled={!canGenerate}
-                    className={cn(!canGenerate && "opacity-40 cursor-not-allowed")}
-                    onClick={handleGenerate}
-                    title={!canGenerate ? "Complete required fields to generate PO." : undefined}
-                  >
-                    Generate PO
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+            {/* CTAs */}
+            <div className="flex gap-2 items-center justify-end">
+              {!deliveryDate && (
+                <p className="text-xs text-muted-foreground mr-1">Complete required fields to generate PO.</p>
+              )}
+              <Button
+                variant="outline"
+                disabled={!hasItems}
+                className={cn("bg-card", !hasItems && "opacity-40 cursor-not-allowed")}
+                onClick={handleDraft}
+              >
+                Draft
+              </Button>
+              <Button
+                variant="cento"
+                disabled={!canGenerate}
+                className={cn(!canGenerate && "opacity-40 cursor-not-allowed")}
+                onClick={handleGenerate}
+                title={!canGenerate ? "Complete required fields to generate PO." : undefined}
+              >
+                Generate PO
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+
 
       {/* ─── Vendor Change Warning Dialog ─── */}
       <AlertDialog open={vendorChangeDialogOpen} onOpenChange={setVendorChangeDialogOpen}>
