@@ -271,9 +271,14 @@ export default function AllOrders() {
     <div className="space-y-4 max-w-[1200px]">
       <div className="flex items-center justify-between">
         <h1 className="cento-page-title text-xl">Orders</h1>
-        <Button variant="cento" onClick={() => navigate("/procurements/new-purchase")}>
-          <Plus className="h-4 w-4" /> Raise PO
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate("/procurements/new-receiving/create")}>
+            <Plus className="h-4 w-4" /> Raise Receiving
+          </Button>
+          <Button variant="cento" onClick={() => navigate("/procurements/new-purchase")}>
+            <Plus className="h-4 w-4" /> Raise PO
+          </Button>
+        </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>

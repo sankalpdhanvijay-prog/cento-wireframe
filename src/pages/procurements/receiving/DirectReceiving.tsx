@@ -7,8 +7,8 @@ import {
   CalendarIcon,
   MapPin,
   Plus,
-  AlertTriangle } from
-"lucide-react";
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -19,55 +19,84 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue } from
-"@/components/ui/select";
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger } from
-"@/components/ui/popover";
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter } from
-"@/components/ui/dialog";
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import {
-  DirectSummaryBlock,
-  recalcRow,
-  createEmptyRow,
-  TAX_TYPE_PERCENT,
-  type TaxType,
-  type ReceivingMaterialRow } from
-"./ReceivingFormShared";
+import { DirectSummaryBlock } from "./ReceivingFormShared";
 
 const MOCK_OUTLETS = [
-{ id: "o1", name: "Main Kitchen" },
-{ id: "o2", name: "Branch - Indiranagar" },
-{ id: "o3", name: "Branch - Koramangala" }];
-
+  { id: "o1", name: "Main Kitchen" },
+  { id: "o2", name: "Branch - Indiranagar" },
+  { id: "o3", name: "Branch - Koramangala" },
+];
 
 const MOCK_VENDORS = [
-{ id: "v1", name: "Fresh Farms Pvt Ltd" },
-{ id: "v2", name: "Spice World Traders" },
-{ id: "v3", name: "Daily Dairy Supplies" },
-{ id: "v4", name: "Ocean Catch Seafoods" }];
-
+  { id: "v1", name: "Fresh Farms Pvt Ltd" },
+  { id: "v2", name: "Spice World Traders" },
+  { id: "v3", name: "Daily Dairy Supplies" },
+  { id: "v4", name: "Ocean Catch Seafoods" },
+];
 
 const MOCK_MATERIALS = [
-{ id: "m1", name: "Basmati Rice", unit: "KG", lastPrice: 85 },
-{ id: "m2", name: "Olive Oil (Extra Virgin)", unit: "LTR", lastPrice: 620 },
-{ id: "m3", name: "Chicken Breast", unit: "KG", lastPrice: 280 },
-{ id: "m4", name: "Onion (Red)", unit: "KG", lastPrice: 35 },
-{ id: "m5", name: "Tomato Paste", unit: "KG", lastPrice: 150 },
-{ id: "m6", name: "Cumin Powder", unit: "KG", lastPrice: 450 },
-{ id: "m7", name: "Mozzarella Cheese", unit: "KG", lastPrice: 520 },
-{ id: "m8", name: "All-Purpose Flour", unit: "KG", lastPrice: 42 }];
+  { id: "m1", name: "Basmati Rice", unit: "KG", lastPrice: 85 },
+  { id: "m2", name: "Olive Oil (Extra Virgin)", unit: "LTR", lastPrice: 620 },
+  { id: "m3", name: "Chicken Breast", unit: "KG", lastPrice: 280 },
+  { id: "m4", name: "Onion (Red)", unit: "KG", lastPrice: 35 },
+  { id: "m5", name: "Tomato Paste", unit: "KG", lastPrice: 150 },
+  { id: "m6", name: "Cumin Powder", unit: "KG", lastPrice: 450 },
+  { id: "m7", name: "Mozzarella Cheese", unit: "KG", lastPrice: 520 },
+  { id: "m8", name: "All-Purpose Flour", unit: "KG", lastPrice: 42 },
+];
 
+const MOCK_TAX_TYPES = [
+  { id: "t1", name: "GST", rate: 18 },
+  { id: "t2", name: "IGST", rate: 18 },
+  { id: "t3", name: "SGST", rate: 9 },
+  { id: "t4", name: "CGST", rate: 9 },
+];
+
+// --- Types ---
+interface TaxEntry {
+  id: string;
+  taxTypeId: string;
+  taxName: string;
+  taxRate: number;
+}
+
+interface DirectMaterialRow {
+  id: string;
+  materialId: string;
+  name: string;
+  unit: string;
+  acceptedQty: number;
+  invoiceUnitPrice: number;
+  taxes: TaxEntry[];
+  totalTaxAmount: number;
+  lineTotal: number;
+  totalLineAmount: number;
+}
+
+function recalcDirectRow(row: DirectMaterialRow): DirectMaterialRow {
+  const lineTotal = row.acceptedQty * row.invoiceUnitPrice;
+  const totalTaxPct = row.taxes.reduce((s, t) => s + t.taxRate, 0);
+  const totalTaxAmount = lineTotal * (totalTaxPct / 100);
+  const totalLineAmount = lineTotal + totalTaxAmount;
+  return { ...row, lineTotal, totalTaxAmount, totalLineAmount };
+}
 
 export default function DirectReceiving() {
   const navigate = useNavigate();
@@ -79,10 +108,14 @@ export default function DirectReceiving() {
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
   const [reference, setReference] = useState("");
-  const [materials, setMaterials] = useState<ReceivingMaterialRow[]>([]);
+  const [materials, setMaterials] = useState<DirectMaterialRow[]>([]);
   const [materialSearch, setMaterialSearch] = useState("");
   const [materialSearchFocused, setMaterialSearchFocused] = useState(false);
   const [showSubmitDialog, setShowSubmitDialog] = useState(false);
+
+  // Tax modal
+  const [taxModalRowId, setTaxModalRowId] = useState<string | null>(null);
+  const [taxModalTypeId, setTaxModalTypeId] = useState("");
 
   const receivingId = useMemo(() => "RCV-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
 
@@ -91,8 +124,8 @@ export default function DirectReceiving() {
     const q = materialSearch.toLowerCase();
     return MOCK_MATERIALS.filter(
       (m) =>
-      m.name.toLowerCase().includes(q) &&
-      !materials.some((r) => r.materialId === m.id)
+        m.name.toLowerCase().includes(q) &&
+        !materials.some((r) => r.materialId === m.id)
     );
   }, [materialSearch, materials]);
 
@@ -102,9 +135,20 @@ export default function DirectReceiving() {
       return;
     }
     setMaterials((prev) => [
-    ...prev,
-    recalcRow(createEmptyRow({ id: crypto.randomUUID(), materialId: m.id, name: m.name, unit: m.unit, invoiceUnitPrice: m.lastPrice }), false)]
-    );
+      ...prev,
+      recalcDirectRow({
+        id: crypto.randomUUID(),
+        materialId: m.id,
+        name: m.name,
+        unit: m.unit,
+        acceptedQty: 0,
+        invoiceUnitPrice: m.lastPrice,
+        taxes: [],
+        totalTaxAmount: 0,
+        lineTotal: 0,
+        totalLineAmount: 0,
+      }),
+    ]);
     setMaterialSearch("");
   }, [materials]);
 
@@ -112,21 +156,47 @@ export default function DirectReceiving() {
     setMaterials((prev) => prev.filter((r) => r.id !== id));
   }, []);
 
-  const updateMaterial = useCallback((id: string, updates: Partial<ReceivingMaterialRow>) => {
+  const updateMaterial = useCallback((id: string, updates: Partial<DirectMaterialRow>) => {
     setMaterials((prev) =>
-    prev.map((r) => r.id === id ? recalcRow({ ...r, ...updates }, false) : r)
+      prev.map((r) => r.id === id ? recalcDirectRow({ ...r, ...updates }) : r)
     );
   }, []);
 
+  const addTaxToRow = () => {
+    if (!taxModalRowId || !taxModalTypeId) return;
+    const tax = MOCK_TAX_TYPES.find((t) => t.id === taxModalTypeId);
+    if (!tax) return;
+    setMaterials((prev) =>
+      prev.map((r) => {
+        if (r.id !== taxModalRowId) return r;
+        if (r.taxes.some((t) => t.taxTypeId === taxModalTypeId)) return r;
+        const newTax: TaxEntry = { id: crypto.randomUUID(), taxTypeId: tax.id, taxName: tax.name, taxRate: tax.rate };
+        return recalcDirectRow({ ...r, taxes: [...r.taxes, newTax] });
+      })
+    );
+    setTaxModalRowId(null);
+    setTaxModalTypeId("");
+  };
+
+  const removeTaxFromRow = (rowId: string, taxId: string) => {
+    setMaterials((prev) =>
+      prev.map((r) =>
+        r.id === rowId ? recalcDirectRow({ ...r, taxes: r.taxes.filter((t) => t.id !== taxId) }) : r
+      )
+    );
+  };
+
   const totals = useMemo(() => {
     const invoiceSubtotal = materials.reduce((s, r) => s + r.lineTotal, 0);
-    const totalTax = materials.reduce((s, r) => s + r.taxAmount, 0);
+    const totalTax = materials.reduce((s, r) => s + r.totalTaxAmount, 0);
     const grandTotal = invoiceSubtotal + totalTax;
     return { invoiceSubtotal, totalTax, grandTotal };
   }, [materials]);
 
   const hasAccepted = materials.some((r) => r.acceptedQty > 0);
   const canSubmit = hasAccepted && !!vendor && !!invoiceDate && materials.length > 0;
+
+  const taxModalSelectedTax = MOCK_TAX_TYPES.find((t) => t.id === taxModalTypeId);
 
   return (
     <div className="flex flex-col h-full">
@@ -136,8 +206,8 @@ export default function DirectReceiving() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/procurements/new-receiving")}
-              className="text-muted-foreground hover:text-foreground transition-colors">
-
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               <ArrowLeft className="h-4 w-4" />
             </button>
             <Select value={outlet} onValueChange={setOutlet} disabled={!isAdmin}>
@@ -147,7 +217,7 @@ export default function DirectReceiving() {
               </SelectTrigger>
               <SelectContent>
                 {MOCK_OUTLETS.map((o) =>
-                <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -176,7 +246,7 @@ export default function DirectReceiving() {
                 </SelectTrigger>
                 <SelectContent>
                   {MOCK_VENDORS.map((v) =>
-                  <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -218,101 +288,104 @@ export default function DirectReceiving() {
                 onFocus={() => setMaterialSearchFocused(true)}
                 onBlur={() => setTimeout(() => setMaterialSearchFocused(false), 200)}
                 placeholder="Search & add material..."
-                className="pl-8 h-8 text-xs bg-card" />
-
-              {materialSearchFocused && filteredMaterials.length > 0 &&
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-[200px] overflow-auto">
-                  {filteredMaterials.map((m) =>
-                <button
-                  key={m.id}
-                  onMouseDown={() => addMaterial(m)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left">
-
+                className="pl-8 h-8 text-xs bg-card"
+              />
+              {materialSearchFocused && filteredMaterials.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-[200px] overflow-auto">
+                  {filteredMaterials.map((m) => (
+                    <button
+                      key={m.id}
+                      onMouseDown={() => addMaterial(m)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors text-left"
+                    >
                       <Plus className="h-3 w-3 text-muted-foreground" />
                       <span className="font-medium">{m.name}</span>
                       <span className="text-xs text-muted-foreground ml-auto">{m.unit}</span>
                     </button>
-                )}
+                  ))}
                 </div>
-              }
+              )}
             </div>
           </div>
 
-          {materials.length === 0 ?
-          <div className="cento-empty-state py-12">
+          {materials.length === 0 ? (
+            <div className="cento-empty-state py-12">
               <p className="text-sm text-muted-foreground">No materials added yet. Use the search above to add items.</p>
-            </div> :
-
-          <div className="overflow-x-auto">
-              <div className="min-w-[700px]">
-                <div className="grid grid-cols-[80px_1.5fr_80px_100px_90px_60px_90px_80px_90px_36px] gap-2 px-4 py-2.5 bg-muted/30 border-b text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  <span>Material Id</span>
-                  <span>Material Name</span>
-                  <span>Accepted</span>
-                  <span>Invoice Price</span>
-                  <span>Tax Type</span>
-                  <span>Tax %</span>
-                  <span className="text-right">Stock Price Total</span>
-                  <span className="text-right">Tax Amt</span>
-                  <span className="text-right">Total</span>
-                  <span></span>
-                </div>
-                {materials.map((row) =>
-              <div key={row.id} className="grid grid-cols-[80px_1.5fr_80px_100px_90px_60px_90px_80px_90px_36px] gap-2 px-4 py-3 items-center border-b border-border/40">
-                    <span className="text-xs text-muted-foreground font-mono">{row.materialId}</span>
-                    <span className="text-sm font-medium text-foreground">{row.name}
-                      <span className="text-xs text-muted-foreground ml-1.5">{row.unit}</span>
-                    </span>
-                    <Input
-                  type="number"
-                  min={0}
-                  value={row.acceptedQty || ""}
-                  onChange={(e) => updateMaterial(row.id, { acceptedQty: parseFloat(e.target.value) || 0 })}
-                  className="h-8 text-sm text-right bg-card" />
-
-                    <Input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={row.invoiceUnitPrice || ""}
-                  onChange={(e) => updateMaterial(row.id, { invoiceUnitPrice: parseFloat(e.target.value) || 0 })}
-                  className="h-8 text-sm text-right bg-card" />
-
-                    <Select
-                  value={row.taxType}
-                  onValueChange={(v) => {
-                    const taxType = v as TaxType;
-                    updateMaterial(row.id, { taxType, taxPercent: TAX_TYPE_PERCENT[taxType] });
-                  }}>
-                      <SelectTrigger className="h-8 text-xs bg-card">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(["GST", "IGST", "CGST", "SGST"] as TaxType[]).map((t) => (
-                          <SelectItem key={t} value={t}>{t}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Input
-                  type="number"
-                  value={row.taxPercent || ""}
-                  disabled
-                  className="h-8 text-sm text-right bg-muted/50" />
-
-                    <span className="text-sm text-foreground text-right">₹{row.lineTotal.toFixed(2)}</span>
-                    <span className="text-sm text-muted-foreground text-right">₹{row.taxAmount.toFixed(2)}</span>
-                    <span className="text-sm font-semibold text-foreground text-right">₹{row.totalLineAmount.toFixed(2)}</span>
-                    <button onClick={() => removeMaterial(row.id)} className="text-muted-foreground hover:text-destructive transition-colors">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-              )}
-              </div>
             </div>
-          }
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[800px]">
+                <thead>
+                  <tr className="bg-muted/30 border-b border-border">
+                    <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Material Name</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Unit</th>
+                    <th className="px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Accepted Qty</th>
+                    <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Invoice Price</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider min-w-[160px]">Taxes</th>
+                    <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Tax Amt</th>
+                    <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Stock Price Total</th>
+                    <th className="px-4 py-2.5 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materials.map((row) => (
+                    <tr key={row.id} className="border-b border-border/40 align-top">
+                      <td className="px-4 py-3 font-medium text-foreground">{row.name}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{row.unit}</td>
+                      <td className="px-4 py-3">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={row.acceptedQty || ""}
+                          onChange={(e) => updateMaterial(row.id, { acceptedQty: parseFloat(e.target.value) || 0 })}
+                          className="h-8 text-sm text-right bg-card w-24"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={row.invoiceUnitPrice || ""}
+                          onChange={(e) => updateMaterial(row.id, { invoiceUnitPrice: parseFloat(e.target.value) || 0 })}
+                          className="h-8 text-sm text-right bg-card w-28"
+                        />
+                      </td>
+                      {/* Taxes column */}
+                      <td className="px-4 py-3 min-w-[160px]">
+                        <div className="flex flex-col gap-1.5">
+                          {row.taxes.map((t) => (
+                            <span key={t.id} className="inline-flex items-center gap-1 rounded-md bg-secondary border border-border px-2 py-0.5 text-xs font-medium text-foreground w-fit">
+                              {t.taxName} {t.taxRate}%
+                              <button onClick={() => removeTaxFromRow(row.id, t.id)} className="ml-0.5 text-muted-foreground hover:text-foreground">
+                                <X className="h-2.5 w-2.5" />
+                              </button>
+                            </span>
+                          ))}
+                          <button
+                            className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors w-fit py-0.5 px-2 rounded border border-primary/20 hover:bg-primary/5"
+                            onClick={() => { setTaxModalRowId(row.id); setTaxModalTypeId(""); }}
+                          >
+                            <Plus className="h-3 w-3" />
+                            Add Tax
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">₹{row.totalTaxAmount.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-semibold tabular-nums">₹{row.totalLineAmount.toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => removeMaterial(row.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Summary */}
@@ -328,6 +401,36 @@ export default function DirectReceiving() {
         </div>
       </div>
 
+      {/* Add Tax Modal */}
+      <Dialog open={!!taxModalRowId} onOpenChange={(open) => { if (!open) { setTaxModalRowId(null); setTaxModalTypeId(""); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add Tax</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Tax Name</Label>
+              <Select value={taxModalTypeId} onValueChange={setTaxModalTypeId}>
+                <SelectTrigger className="bg-background"><SelectValue placeholder="Select tax type" /></SelectTrigger>
+                <SelectContent>
+                  {MOCK_TAX_TYPES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {taxModalSelectedTax && (
+              <div>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Tax Value (%)</Label>
+                <Input value={`${taxModalSelectedTax.rate}%`} disabled className="bg-muted" />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setTaxModalRowId(null); setTaxModalTypeId(""); }}>Cancel</Button>
+            <Button variant="cento" disabled={!taxModalTypeId} onClick={addTaxToRow}>Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Submit confirmation */}
       <Dialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
         <DialogContent>
@@ -337,10 +440,10 @@ export default function DirectReceiving() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>Cancel</Button>
-            <Button variant="cento" onClick={() => {setShowSubmitDialog(false);navigate("/procurements/new-receiving");}}>Confirm & Submit</Button>
+            <Button variant="cento" onClick={() => { setShowSubmitDialog(false); navigate("/procurements/new-receiving"); }}>Confirm & Submit</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>);
-
+    </div>
+  );
 }

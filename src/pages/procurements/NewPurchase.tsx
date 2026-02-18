@@ -672,14 +672,15 @@ export default function NewPurchase() {
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Purchase Qty</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Purchase Amt</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider min-w-[180px]">Taxes</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Tax</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Amt</th>
                   <th className="px-4 py-3 w-10"></th>
                 </tr>
               </thead>
               <tbody>
-                {lineItems.length === 0 && (
+                  {lineItems.length === 0 && (
                   <tr>
-                    <td colSpan={11} className="text-center text-muted-foreground text-sm py-14">
+                    <td colSpan={12} className="text-center text-muted-foreground text-sm py-14">
                       Search for materials above to add them to this PO
                     </td>
                   </tr>
@@ -744,6 +745,9 @@ export default function NewPurchase() {
                       </div>
                     </td>
 
+                    <td className="px-4 py-4 text-right tabular-nums text-muted-foreground">
+                      {item.totalTaxAmount > 0 ? `₹${item.totalTaxAmount.toFixed(2)}` : "—"}
+                    </td>
                     <td className="px-4 py-4 text-right font-semibold tabular-nums">₹{item.totalAmount.toFixed(2)}</td>
                     <td className="px-4 py-4">
                       <button
