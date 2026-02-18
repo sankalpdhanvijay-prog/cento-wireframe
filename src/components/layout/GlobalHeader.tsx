@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 const currentUser = {
   fullName: "Arjun Mehta",
-  role: "Operations Manager",
+  role: "Admin",
   username: "arjun.mehta",
   email: "arjun@centofoods.com",
   phone: "+91 98765 43210",
