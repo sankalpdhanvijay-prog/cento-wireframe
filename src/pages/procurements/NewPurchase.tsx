@@ -39,7 +39,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -234,7 +234,7 @@ export default function NewPurchase() {
   const [taxModalTaxTypeId, setTaxModalTaxTypeId] = useState("");
   const [bulkTaxModalOpen, setBulkTaxModalOpen] = useState(false);
   const [bulkTaxTypeId, setBulkTaxTypeId] = useState("");
-  const [bulkApplyMode, setBulkApplyMode] = useState<"all" | "without" | "overwrite">("all");
+  const [activeBulkTax, setActiveBulkTax] = useState<{ taxTypeId: string; taxName: string; taxRate: number } | null>(null);
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templateVendorId, setTemplateVendorId] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
@@ -294,6 +294,9 @@ export default function NewPurchase() {
       toast({ title: "Already added", description: `${material.name} is already in the list.` });
       return;
     }
+    const initialTaxes: TaxEntry[] = activeBulkTax
+      ? [{ id: crypto.randomUUID(), taxTypeId: activeBulkTax.taxTypeId, taxName: activeBulkTax.taxName, taxRate: activeBulkTax.taxRate, taxAmount: 0 }]
+      : [];
     const newItem: POLineItem = {
       id: crypto.randomUUID(),
       materialId: material.id,
@@ -305,13 +308,13 @@ export default function NewPurchase() {
       buyingPrice: material.buyingPrice,
       purchaseStock: 0,
       purchaseAmount: 0,
-      taxes: [],
+      taxes: initialTaxes,
       totalTaxAmount: 0,
       totalAmount: 0,
     };
     setLineItems((prev) => [newItem, ...prev]);
     setSearchQuery("");
-  }, [lineItems]);
+  }, [lineItems, activeBulkTax]);
 
   const removeItem = useCallback((id: string) => {
     setLineItems((prev) => prev.filter((li) => li.id !== id));
@@ -371,25 +374,21 @@ export default function NewPurchase() {
     if (!bulkTaxTypeId) return;
     const tax = MOCK_TAX_TYPES.find((t) => t.id === bulkTaxTypeId);
     if (!tax) return;
+    // Store as active bulk tax so new materials also get it applied
+    setActiveBulkTax({ taxTypeId: tax.id, taxName: tax.name, taxRate: tax.rate });
+    // Apply to all current materials
     setLineItems((prev) =>
       prev.map((li) => {
         let taxes = [...li.taxes];
-        if (bulkApplyMode === "all" || bulkApplyMode === "overwrite") {
-          if (bulkApplyMode === "overwrite") taxes = [];
-          if (!taxes.some((t) => t.taxTypeId === tax.id)) {
-            taxes = [...taxes, { id: crypto.randomUUID(), taxTypeId: tax.id, taxName: tax.name, taxRate: tax.rate, taxAmount: 0 }];
-          }
-        } else if (bulkApplyMode === "without") {
-          if (li.taxes.length === 0) {
-            taxes = [{ id: crypto.randomUUID(), taxTypeId: tax.id, taxName: tax.name, taxRate: tax.rate, taxAmount: 0 }];
-          }
+        if (!taxes.some((t) => t.taxTypeId === tax.id)) {
+          taxes = [...taxes, { id: crypto.randomUUID(), taxTypeId: tax.id, taxName: tax.name, taxRate: tax.rate, taxAmount: 0 }];
         }
         return recalcItemTaxes({ ...li, taxes });
       })
     );
     setBulkTaxModalOpen(false);
     setBulkTaxTypeId("");
-    toast({ title: "Tax applied", description: `${tax.name} ${tax.rate}% applied to materials.` });
+    toast({ title: "Tax applied", description: `${tax.name} ${tax.rate}% applied to all materials.` });
   };
 
   // Template handler
@@ -652,7 +651,7 @@ export default function NewPurchase() {
                 variant="outline"
                 size="sm"
                 className="h-8 text-xs gap-1.5 bg-background"
-                onClick={() => { setBulkTaxTypeId(""); setBulkApplyMode("all"); setBulkTaxModalOpen(true); }}
+                onClick={() => { setBulkTaxTypeId(""); setBulkTaxModalOpen(true); }}
               >
                 <Tag className="h-3 w-3" />
                 Apply Tax to All
@@ -937,23 +936,6 @@ export default function NewPurchase() {
                 <Input value={`${bulkSelectedTax.rate}%`} disabled className="bg-muted" />
               </div>
             )}
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Apply To</Label>
-              <RadioGroup value={bulkApplyMode} onValueChange={(v) => setBulkApplyMode(v as typeof bulkApplyMode)} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="all" id="bulk-all" />
-                  <Label htmlFor="bulk-all" className="text-sm font-normal cursor-pointer">All materials</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="without" id="bulk-without" />
-                  <Label htmlFor="bulk-without" className="text-sm font-normal cursor-pointer">Only materials without tax</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RadioGroupItem value="overwrite" id="bulk-overwrite" />
-                  <Label htmlFor="bulk-overwrite" className="text-sm font-normal cursor-pointer">Overwrite existing taxes</Label>
-                </div>
-              </RadioGroup>
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBulkTaxModalOpen(false)}>Cancel</Button>
