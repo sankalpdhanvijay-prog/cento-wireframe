@@ -10,7 +10,7 @@ const currentUser = {
   username: "arjun.mehta",
   email: "arjun@centofoods.com",
   phone: "+91 98765 43210",
-  initials: "AM",
+  initials: "AM"
 };
 
 const activeOutlet = "Main Kitchen";
@@ -49,8 +49,8 @@ export function GlobalHeader() {
           <PopoverContent
             align="end"
             sideOffset={8}
-            className="w-[300px] rounded-xl shadow-lg border border-border bg-popover p-0 z-50"
-          >
+            className="w-[300px] rounded-xl shadow-lg border border-border bg-popover p-0 z-50">
+
             {/* User Info Top */}
             <div className="p-4 pb-3">
               <div className="flex items-center gap-3 mb-2">
@@ -65,8 +65,8 @@ export function GlobalHeader() {
                   </p>
                   <Badge
                     variant="secondary"
-                    className="mt-1 text-[10px] font-medium px-2 py-0 h-5 rounded-full bg-cento-yellow-tint text-foreground border-0"
-                  >
+                    className="mt-1 text-[10px] font-medium px-2 py-0 h-5 rounded-full bg-cento-yellow-tint text-foreground border-0">
+
                     {currentUser.role}
                   </Badge>
                 </div>
@@ -86,10 +86,10 @@ export function GlobalHeader() {
 
             {/* Actions */}
             <div className="p-2">
-              <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-foreground hover:bg-muted transition-colors duration-150">
-                <User className="h-4 w-4 text-muted-foreground" />
-                My Profile
-              </button>
+              
+
+
+
               <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-destructive/5 transition-colors duration-150">
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -98,15 +98,15 @@ export function GlobalHeader() {
           </PopoverContent>
         </Popover>
       </div>
-    </header>
-  );
+    </header>);
+
 }
 
-function ProfileField({ label, value }: { label: string; value: string }) {
+function ProfileField({ label, value }: {label: string;value: string;}) {
   return (
     <div>
       <p className="text-xs text-muted-foreground leading-none mb-0.5">{label}</p>
       <p className="text-sm font-medium text-foreground">{value}</p>
-    </div>
-  );
+    </div>);
+
 }
