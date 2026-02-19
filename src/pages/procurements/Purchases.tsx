@@ -1,22 +1,16 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Trash2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import {
-  MoreHorizontal, Search, Eye, Pencil, Trash2, XCircle,
-} from "lucide-react";
 import { usePOStore, type PurchaseOrder, type POStatus } from "@/context/POStoreContext";
 
 const PURCHASE_TABS: POStatus[] = ["Drafted", "Raised", "Approved", "Cancelled"];
@@ -33,8 +27,12 @@ const fmt = (n: number) =>
 
 export default function Purchases() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { orders, deleteOrder } = usePOStore();
-  const [tab, setTab] = useState("drafted");
+
+  // Allow the tab to be set via navigation state (e.g. after draft/generate)
+  const initialTab = (location.state as { tab?: string } | null)?.tab ?? "drafted";
+  const [tab, setTab] = useState(initialTab);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
 
@@ -54,22 +52,6 @@ export default function Purchases() {
   const handleDelete = () => {
     if (deleteTarget) deleteOrder(deleteTarget.id);
     setDeleteTarget(null);
-  };
-
-  const handleAction = (action: string, row: PurchaseOrder) => {
-    switch (action) {
-      case "view":
-        navigate(`/procurements/purchases/${row.id}`);
-        break;
-      case "edit":
-        navigate("/procurements/new-purchase", { state: { editPO: row.id } });
-        break;
-      case "delete":
-        setDeleteTarget(row);
-        break;
-      case "cancel":
-        break;
-    }
   };
 
   const renderColumns = () => {
@@ -120,30 +102,17 @@ export default function Purchases() {
   };
 
   const renderRow = (row: PurchaseOrder) => {
-    const actions = getActions(tab);
-    const actionMenu = (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          {actions.map((a) => (
-            <DropdownMenuItem
-              key={a.key}
-              onClick={() => handleAction(a.key, row)}
-              className={a.destructive ? "text-destructive focus:text-destructive" : ""}
-            >
-              <a.icon className="h-3.5 w-3.5 mr-2" />
-              {a.label}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
-
     const detailPath = `/procurements/purchases/${row.id}`;
+    const deleteBtn = tab === "drafted" ? (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+        onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    ) : null;
 
     switch (tab) {
       case "drafted":
@@ -157,7 +126,7 @@ export default function Purchases() {
             <TableCell>{row.createdBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.createdOn}</TableCell>
             <TableCell className="text-muted-foreground">{row.lastUpdated}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
           </TableRow>
         );
       case "raised":
@@ -171,7 +140,7 @@ export default function Purchases() {
             <TableCell className="text-right">{row.totalQty}</TableCell>
             <TableCell>{row.createdBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.createdOn}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
+            <TableCell />
           </TableRow>
         );
       case "cancelled":
@@ -183,7 +152,7 @@ export default function Purchases() {
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
             <TableCell className="text-muted-foreground">{row.cancelledDate}</TableCell>
             <TableCell>{row.cancelledBy}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
+            <TableCell />
           </TableRow>
         );
       default:
@@ -262,31 +231,4 @@ export default function Purchases() {
       </AlertDialog>
     </div>
   );
-}
-
-function getActions(tab: string) {
-  switch (tab) {
-    case "drafted":
-      return [
-        { key: "view", label: "View Details", icon: Eye, destructive: false },
-        { key: "edit", label: "Edit", icon: Pencil, destructive: false },
-        { key: "delete", label: "Delete", icon: Trash2, destructive: true },
-      ];
-    case "raised":
-      return [
-        { key: "view", label: "View Details", icon: Eye, destructive: false },
-        { key: "cancel", label: "Cancel PO", icon: XCircle, destructive: true },
-      ];
-    case "approved":
-      return [
-        { key: "view", label: "View Details", icon: Eye, destructive: false },
-        { key: "cancel", label: "Cancel PO", icon: XCircle, destructive: true },
-      ];
-    case "cancelled":
-      return [
-        { key: "view", label: "View Details", icon: Eye, destructive: false },
-      ];
-    default:
-      return [];
-  }
 }

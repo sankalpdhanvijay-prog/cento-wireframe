@@ -19,6 +19,7 @@ import CreateReceivingTypeSelect from "./pages/procurements/receiving/CreateRece
 import POBasedReceiving from "./pages/procurements/receiving/POBasedReceiving";
 import DirectReceiving from "./pages/procurements/receiving/DirectReceiving";
 import ViewReceiving from "./pages/procurements/receiving/ViewReceiving";
+import ViewReceivingDetail from "./pages/procurements/receivings/ViewReceivingDetail";
 import AllOrders from "./pages/procurements/AllOrders";
 import ViewOrderDetails from "./pages/procurements/orders/ViewOrderDetails";
 import DispatchManagement from "./pages/operations/DispatchManagement";
@@ -53,9 +54,9 @@ const App = () => (
               <Route path="/procurements/purchases/:id" element={<ViewOrderDetails />} />
               <Route path="/procurements/new-purchase" element={<NewPurchase />} />
               <Route path="/procurements/receivings" element={<Receivings />} />
-              <Route path="/procurements/receivings/:id" element={<ViewReceiving />} />
+              <Route path="/procurements/receivings/:id" element={<ViewReceivingDetail />} />
               <Route path="/procurements/closed-orders" element={<ClosedOrders />} />
-              <Route path="/procurements/closed-orders/:id" element={<ViewOrderDetails />} />
+              <Route path="/procurements/closed-orders/:id" element={<ViewReceivingDetail />} />
 
               {/* Legacy receiving flow routes */}
               <Route path="/procurements/new-receiving" element={<Navigate to="/procurements/receivings" replace />} />

@@ -461,7 +461,7 @@ export default function NewPurchase() {
       grandTotal: totals.grandTotal,
     });
     toast({ title: "PO Generated", description: "Purchase order has been raised." });
-    navigate("/procurements/all-orders");
+    navigate("/procurements/purchases", { state: { tab: "raised" } });
   };
 
   const handleDraft = () => {
@@ -494,7 +494,7 @@ export default function NewPurchase() {
       grandTotal: totals.grandTotal,
     });
     toast({ title: "Draft saved", description: "Purchase order saved as draft." });
-    navigate("/procurements/all-orders");
+    navigate("/procurements/purchases", { state: { tab: "drafted" } });
   };
 
   return (

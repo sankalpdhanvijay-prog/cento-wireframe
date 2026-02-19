@@ -7,7 +7,7 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
 import {
-  ArrowLeft, CheckCircle2, XCircle, Package, Lock,
+  ArrowLeft, CheckCircle2, XCircle, Package, Pencil,
 } from "lucide-react";
 import { usePOStore, type POStatus } from "@/context/POStoreContext";
 
@@ -35,43 +35,34 @@ export default function ViewOrderDetails() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
         <p className="text-sm">Order not found.</p>
-        <Button variant="ghost" className="mt-4" onClick={() => navigate("/procurements/all-orders")}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Orders
+        <Button variant="ghost" className="mt-4" onClick={() => navigate("/procurements/purchases")}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Purchases
         </Button>
       </div>
     );
   }
 
-  const isReadOnly = po.status === "Closed" || po.status === "Cancelled";
   const showReceivingTotals = po.status === "Partially Received" || po.status === "Closed";
-
-  const totalOrderedQty = po.materials.reduce((s, m) => s + m.orderedQty, 0);
-  const totalReceivedQty = po.materials.reduce((s, m) => s + m.receivedQty, 0);
-  const totalPendingQty = po.materials.reduce((s, m) => s + m.pendingQty, 0);
 
   const handleAction = (action: string) => {
     switch (action) {
-      case "submit":
-        updateOrderStatus(po.id, "Raised");
-        navigate("/procurements/purchases");
+      case "edit":
+        navigate("/procurements/new-purchase", { state: { editPO: po.id } });
         break;
       case "approve":
-        updateOrderStatus(po.id, "Approved");
-        navigate("/procurements/purchases");
+        updateOrderStatus(po.id, "Raised");
+        navigate("/procurements/purchases", { state: { tab: "raised" } });
+        break;
+      case "raise":
+        updateOrderStatus(po.id, "Raised");
+        navigate("/procurements/purchases", { state: { tab: "raised" } });
         break;
       case "receive":
         navigate("/procurements/new-receiving/po", { state: { poId: po.id } });
         break;
-      case "receive-more":
-        navigate("/procurements/new-receiving/po", { state: { poId: po.id } });
-        break;
-      case "close":
-        updateOrderStatus(po.id, "Closed");
-        navigate("/procurements/closed-orders");
-        break;
       case "cancel":
         updateOrderStatus(po.id, "Cancelled");
-        navigate("/procurements/purchases");
+        navigate("/procurements/purchases", { state: { tab: "cancelled" } });
         break;
     }
   };
@@ -142,11 +133,6 @@ export default function ViewOrderDetails() {
               })}
             </TableBody>
           </Table>
-          <div className="flex items-center gap-6 px-4 py-3 bg-muted/20 border-t text-xs">
-            <span className="text-muted-foreground">Total Ordered: <span className="font-semibold text-foreground">{totalOrderedQty}</span></span>
-            <span className="text-muted-foreground">Total Received: <span className="font-semibold text-emerald-700">{totalReceivedQty}</span></span>
-            <span className="text-muted-foreground">Total Pending: <span className="font-semibold text-amber-600">{totalPendingQty}</span></span>
-          </div>
         </CardContent>
       </Card>
 
@@ -175,8 +161,8 @@ export default function ViewOrderDetails() {
         </CardContent>
       </Card>
 
-      {/* Sticky Footer CTAs */}
-      {!isReadOnly && (
+      {/* Sticky Footer CTAs — only for Purchases statuses */}
+      {(po.status === "Drafted" || po.status === "Raised" || po.status === "Approved") && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-30">
           <div className="max-w-[1000px] mx-auto flex items-center justify-end gap-3 px-6 py-3">
             {po.status === "Drafted" && (
@@ -184,8 +170,8 @@ export default function ViewOrderDetails() {
                 <Button variant="destructive" size="sm" onClick={() => handleAction("cancel")}>
                   <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel PO
                 </Button>
-                <Button variant="cento" size="sm" onClick={() => handleAction("submit")}>
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Submit PO
+                <Button variant="outline" size="sm" onClick={() => handleAction("edit")}>
+                  <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                 </Button>
               </>
             )}
@@ -206,16 +192,6 @@ export default function ViewOrderDetails() {
                 </Button>
                 <Button variant="cento" size="sm" onClick={() => handleAction("receive")}>
                   <Package className="h-3.5 w-3.5 mr-1" /> Receive PO
-                </Button>
-              </>
-            )}
-            {po.status === "Partially Received" && (
-              <>
-                <Button variant="outline" size="sm" onClick={() => handleAction("close")}>
-                  <Lock className="h-3.5 w-3.5 mr-1" /> Close PO
-                </Button>
-                <Button variant="cento" size="sm" onClick={() => handleAction("receive-more")}>
-                  <Package className="h-3.5 w-3.5 mr-1" /> Receive More
                 </Button>
               </>
             )}
