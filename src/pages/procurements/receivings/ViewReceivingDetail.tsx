@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -207,6 +207,8 @@ export type { GRNDetail };
 export default function ViewReceivingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isClosedOrder = pathname.startsWith("/procurements/closed-orders");
 
   const grn = MOCK_GRN_DETAILS.find((g) => g.id === id);
 
@@ -365,7 +367,7 @@ export default function ViewReceivingDetail() {
       </Card>
 
       {/* Sticky Footer CTAs */}
-      {(grn.status === "Drafted" || grn.status === "Received" || grn.status === "Partially Received") && (
+      {!isClosedOrder && (grn.status === "Drafted" || grn.status === "Received" || grn.status === "Partially Received") && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-30">
           <div className="max-w-[1000px] mx-auto flex items-center justify-end gap-3 px-6 py-3">
             {grn.status === "Drafted" && (
