@@ -53,11 +53,11 @@ export default function ViewOrderDetails() {
     switch (action) {
       case "submit":
         updateOrderStatus(po.id, "Raised");
-        navigate("/procurements/all-orders");
+        navigate("/procurements/purchases");
         break;
       case "approve":
         updateOrderStatus(po.id, "Approved");
-        navigate("/procurements/all-orders");
+        navigate("/procurements/purchases");
         break;
       case "receive":
         navigate("/procurements/new-receiving/po", { state: { poId: po.id } });
@@ -67,19 +67,19 @@ export default function ViewOrderDetails() {
         break;
       case "close":
         updateOrderStatus(po.id, "Closed");
-        navigate("/procurements/all-orders");
+        navigate("/procurements/closed-orders");
         break;
       case "cancel":
         updateOrderStatus(po.id, "Cancelled");
-        navigate("/procurements/all-orders");
+        navigate("/procurements/purchases");
         break;
     }
   };
 
   return (
     <div className="space-y-5 max-w-[1000px] pb-28">
-      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate("/procurements/all-orders")}>
-        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back to Orders
+      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
       </Button>
 
       {/* SECTION 1: PO Details */}
@@ -122,24 +122,24 @@ export default function ViewOrderDetails() {
                 <TableHead>Item Name</TableHead>
                 <TableHead className="text-right">Ordered Qty</TableHead>
                 <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead className="text-right">Tax %</TableHead>
-                <TableHead className="text-right">Line Total</TableHead>
-                <TableHead className="text-right">Received Qty</TableHead>
-                <TableHead className="text-right">Pending Qty</TableHead>
+                <TableHead className="text-right">Tax Amount</TableHead>
+                <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {po.materials.map((m, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">{m.name}</TableCell>
-                  <TableCell className="text-right">{m.orderedQty}</TableCell>
-                  <TableCell className="text-right">{fmt(m.unitPrice)}</TableCell>
-                  <TableCell className="text-right">{m.taxPct}%</TableCell>
-                  <TableCell className="text-right font-medium">{fmt(m.lineTotal)}</TableCell>
-                  <TableCell className="text-right text-emerald-700">{m.receivedQty}</TableCell>
-                  <TableCell className={`text-right ${m.pendingQty > 0 ? "text-amber-600 font-medium" : "text-muted-foreground"}`}>{m.pendingQty}</TableCell>
-                </TableRow>
-              ))}
+              {po.materials.map((m, i) => {
+                const taxAmount = m.lineTotal * (m.taxPct / 100);
+                const total = m.lineTotal + taxAmount;
+                return (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{m.name}</TableCell>
+                    <TableCell className="text-right">{m.orderedQty}</TableCell>
+                    <TableCell className="text-right">{fmt(m.unitPrice)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{fmt(taxAmount)}</TableCell>
+                    <TableCell className="text-right font-medium">{fmt(total)}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           <div className="flex items-center gap-6 px-4 py-3 bg-muted/20 border-t text-xs">
