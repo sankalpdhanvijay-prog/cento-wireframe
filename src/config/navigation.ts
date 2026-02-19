@@ -51,9 +51,9 @@ export const mainModules: NavModule[] = [
     path: "/procurements",
     icon: ShoppingCart,
     subModules: [
-      { title: "Purchase", path: "/procurements/new-purchase", icon: FilePlus },
-      { title: "Receivings", path: "/procurements/new-receiving", icon: FileInput },
-      { title: "All Orders", path: "/procurements/all-orders", icon: ListOrdered },
+      { title: "Purchases", path: "/procurements/purchases", icon: FilePlus },
+      { title: "Receivings", path: "/procurements/receivings", icon: FileInput },
+      { title: "Closed Orders", path: "/procurements/closed-orders", icon: ListOrdered },
     ],
   },
   {
