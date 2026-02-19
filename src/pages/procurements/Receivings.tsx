@@ -1,16 +1,16 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Trash2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
 import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Eye, Pencil, Trash2 } from "lucide-react";
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 interface GRNRow {
   id: string;
@@ -48,15 +48,21 @@ const TAB_KEY: Record<string, GRNRow["status"]> = {
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
+let mockGRNs = [...MOCK_GRNS];
+
 export default function Receivings() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState("drafted");
+  const location = useLocation();
+  const initialTab = (location.state as { tab?: string } | null)?.tab ?? "drafted";
+  const [tab, setTab] = useState(initialTab);
   const [search, setSearch] = useState("");
+  const [grns, setGrns] = useState<GRNRow[]>(MOCK_GRNS);
+  const [deleteTarget, setDeleteTarget] = useState<GRNRow | null>(null);
 
   const activeStatus = TAB_KEY[tab];
 
   const rows = useMemo(() => {
-    return MOCK_GRNS.filter((r) => {
+    return grns.filter((r) => {
       if (r.status !== activeStatus) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -68,11 +74,11 @@ export default function Receivings() {
       }
       return true;
     });
-  }, [activeStatus, search]);
+  }, [grns, activeStatus, search]);
 
-  const handleAction = (action: string, row: GRNRow) => {
-    if (action === "view") navigate(`/procurements/receivings/${row.id}`);
-    if (action === "edit") navigate(`/procurements/new-receiving/edit/${row.id}`);
+  const handleDelete = () => {
+    if (deleteTarget) setGrns((prev) => prev.filter((g) => g.id !== deleteTarget.id));
+    setDeleteTarget(null);
   };
 
   const renderColumns = () => {
@@ -111,19 +117,6 @@ export default function Receivings() {
           </>
         );
       case "drafted":
-        return (
-          <>
-            <TableHead className="w-[120px]">GRN ID</TableHead>
-            <TableHead>Receiving Type</TableHead>
-            <TableHead>PO ID</TableHead>
-            <TableHead>Vendor</TableHead>
-            <TableHead>Outlet</TableHead>
-            <TableHead className="text-right">Total Value</TableHead>
-            <TableHead>PO Created By</TableHead>
-            <TableHead>PO Created On</TableHead>
-            <TableHead className="w-[48px]" />
-          </>
-        );
       case "cancelled":
         return (
           <>
@@ -144,28 +137,22 @@ export default function Receivings() {
   };
 
   const renderRow = (row: GRNRow) => {
-    const actions = getActions(tab);
     const detailPath = `/procurements/receivings/${row.id}`;
-    const actionMenu = (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          {actions.map((a) => (
-            <DropdownMenuItem
-              key={a.key}
-              onClick={() => handleAction(a.key, row)}
-              className={a.destructive ? "text-destructive focus:text-destructive" : ""}
-            >
-              <a.icon className="h-3.5 w-3.5 mr-2" />
-              {a.label}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+    const deleteBtn = tab === "drafted" ? (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+        onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    ) : null;
+
+    const typeBadge = (
+      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${row.receivingType === "PO-Based" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
+        {row.receivingType}
+      </span>
     );
 
     switch (tab) {
@@ -182,18 +169,14 @@ export default function Receivings() {
             <TableCell className="text-muted-foreground">{row.receivingDate}</TableCell>
             <TableCell>{row.poCreatedBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.poCreatedOn}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
           </TableRow>
         );
       case "received":
         return (
           <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.grnId}</TableCell>
-            <TableCell>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${row.receivingType === "PO-Based" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
-                {row.receivingType}
-              </span>
-            </TableCell>
+            <TableCell>{typeBadge}</TableCell>
             <TableCell className="text-muted-foreground">{row.poId ?? "—"}</TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
@@ -203,7 +186,7 @@ export default function Receivings() {
             <TableCell className="text-muted-foreground">{row.receivingDate}</TableCell>
             <TableCell>{row.poCreatedBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.poCreatedOn}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
           </TableRow>
         );
       case "drafted":
@@ -211,18 +194,14 @@ export default function Receivings() {
         return (
           <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.grnId}</TableCell>
-            <TableCell>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${row.receivingType === "PO-Based" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
-                {row.receivingType}
-              </span>
-            </TableCell>
+            <TableCell>{typeBadge}</TableCell>
             <TableCell className="text-muted-foreground">{row.poId ?? "—"}</TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
             <TableCell>{row.poCreatedBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.poCreatedOn}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
           </TableRow>
         );
       default:
@@ -282,28 +261,23 @@ export default function Receivings() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Draft Receiving?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. GRN <span className="font-semibold">{deleteTarget?.grnId}</span> will be permanently removed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirm Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-}
-
-function getActions(tab: string) {
-  switch (tab) {
-    case "drafted":
-      return [
-        { key: "view", label: "View Details", icon: Eye, destructive: false },
-        { key: "edit", label: "Edit", icon: Pencil, destructive: false },
-        { key: "delete", label: "Delete", icon: Trash2, destructive: true },
-      ];
-    case "received":
-    case "partial":
-      return [
-        { key: "view", label: "View Details", icon: Eye, destructive: false },
-      ];
-    case "cancelled":
-      return [
-        { key: "view", label: "View Details", icon: Eye, destructive: false },
-      ];
-    default:
-      return [];
-  }
 }

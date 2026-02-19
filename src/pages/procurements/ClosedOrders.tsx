@@ -5,10 +5,7 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
-import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Eye } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface ClosedOrderRow {
   id: string;
@@ -81,13 +78,12 @@ export default function ClosedOrders() {
               <TableHead>Receiving Date</TableHead>
               <TableHead>PO Created By</TableHead>
               <TableHead>PO Created On</TableHead>
-              <TableHead className="w-[48px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={11} className="text-center py-12 text-muted-foreground">
                   No closed orders found.
                 </TableCell>
               </TableRow>
@@ -113,21 +109,6 @@ export default function ClosedOrders() {
                   <TableCell className="text-muted-foreground">{row.receivingDate}</TableCell>
                   <TableCell>{row.poCreatedBy}</TableCell>
                   <TableCell className="text-muted-foreground">{row.poCreatedOn}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem onClick={() => navigate(`/procurements/closed-orders/${row.id}`)}>
-                          <Eye className="h-3.5 w-3.5 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
                 </TableRow>
               ))
             )}
