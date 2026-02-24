@@ -14,16 +14,20 @@ export interface POLineItem {
   pendingQty: number;
 }
 
+export type SupplierType = "Vendor" | "Outlet";
+
 export interface PurchaseOrder {
   id: string;
   vendor: string;
   outlet: string;
+  supplierType: SupplierType;
   totalValue: number;
   totalQty: number;
   receivedQty?: number;
   pendingQty?: number;
   createdBy: string;
   createdOn: string;
+  approvedOn?: string;
   lastUpdated?: string;
   lastReceivingDate?: string;
   closedDate?: string;
@@ -40,12 +44,14 @@ export interface PurchaseOrder {
   invoiceValueReceived?: number;
   invoiceTaxReceived?: number;
   outstandingValue?: number;
+  otherCharges?: number;
+  taxBreakdown?: Record<string, number>;
 }
 
 /* ───── Seed data ───── */
 const SEED_ORDERS: PurchaseOrder[] = [
   {
-    id: "PO-1001", vendor: "Sysco Foods", outlet: "Main Kitchen", totalValue: 24500, totalQty: 120,
+    id: "PO-1001", vendor: "Sysco Foods", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 24500, totalQty: 120,
     createdBy: "Ankit", createdOn: "2026-02-01", lastUpdated: "2026-02-02", status: "Drafted",
     expectedDelivery: "2026-02-10",
     materials: [
@@ -56,7 +62,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     poSubtotal: 24500, totalTax: 1765, grandTotal: 26265,
   },
   {
-    id: "PO-1002", vendor: "US Foods", outlet: "Central Warehouse", totalValue: 18200, totalQty: 85,
+    id: "PO-1002", vendor: "US Foods", outlet: "Central Warehouse", supplierType: "Vendor", totalValue: 18200, totalQty: 85,
     createdBy: "Meera", createdOn: "2026-02-03", lastUpdated: "2026-02-04", status: "Drafted",
     materials: [
       { name: "Olive Oil 5L", orderedQty: 25, unitPrice: 480, taxPct: 12, lineTotal: 12000, receivedQty: 0, pendingQty: 25 },
@@ -65,7 +71,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     poSubtotal: 18200, totalTax: 1750, grandTotal: 19950,
   },
   {
-    id: "PO-1003", vendor: "Metro Supply", outlet: "Main Kitchen", totalValue: 31000, totalQty: 200,
+    id: "PO-1003", vendor: "Metro Supply", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 31000, totalQty: 200,
     createdBy: "Ankit", createdOn: "2026-01-28", status: "Raised", expectedDelivery: "2026-02-08",
     materials: [
       { name: "Tomato Paste 5kg", orderedQty: 80, unitPrice: 150, taxPct: 12, lineTotal: 12000, receivedQty: 0, pendingQty: 80 },
@@ -75,7 +81,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     poSubtotal: 31000, totalTax: 2490, grandTotal: 33490,
   },
   {
-    id: "PO-1004", vendor: "Fresh Direct", outlet: "Central Warehouse", totalValue: 12750, totalQty: 60,
+    id: "PO-1004", vendor: "Fresh Direct", outlet: "Central Warehouse", supplierType: "Outlet", totalValue: 12750, totalQty: 60,
     createdBy: "Meera", createdOn: "2026-01-25", status: "Raised",
     materials: [
       { name: "Fresh Tomatoes 10kg", orderedQty: 30, unitPrice: 250, taxPct: 0, lineTotal: 7500, receivedQty: 0, pendingQty: 30 },
@@ -84,7 +90,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     poSubtotal: 12750, totalTax: 0, grandTotal: 12750,
   },
   {
-    id: "PO-1005", vendor: "Sysco Foods", outlet: "Main Kitchen", totalValue: 42000, totalQty: 310,
+    id: "PO-1005", vendor: "Sysco Foods", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 42000, totalQty: 310,
     createdBy: "Raj", createdOn: "2026-01-20", status: "Approved", expectedDelivery: "2026-02-01",
     materials: [
       { name: "Basmati Rice 25kg", orderedQty: 100, unitPrice: 220, taxPct: 5, lineTotal: 22000, receivedQty: 0, pendingQty: 100 },
@@ -94,7 +100,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     poSubtotal: 42000, totalTax: 2800, grandTotal: 44800,
   },
   {
-    id: "PO-1006", vendor: "Metro Supply", outlet: "South Outlet", totalValue: 9500, totalQty: 55,
+    id: "PO-1006", vendor: "Metro Supply", outlet: "South Outlet", supplierType: "Vendor", totalValue: 9500, totalQty: 55,
     createdBy: "Ankit", createdOn: "2026-01-18", status: "Approved",
     materials: [
       { name: "Coriander Powder 1kg", orderedQty: 55, unitPrice: 172.73, taxPct: 5, lineTotal: 9500, receivedQty: 0, pendingQty: 55 },
@@ -102,7 +108,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     poSubtotal: 9500, totalTax: 475, grandTotal: 9975,
   },
   {
-    id: "PO-1007", vendor: "US Foods", outlet: "Main Kitchen", totalValue: 38000, totalQty: 250,
+    id: "PO-1007", vendor: "US Foods", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 38000, totalQty: 250,
     receivedQty: 180, pendingQty: 70, createdBy: "Meera", createdOn: "2026-01-10",
     lastUpdated: "2026-02-05", status: "Partially Received",
     materials: [
@@ -114,7 +120,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     invoiceValueReceived: 27600, invoiceTaxReceived: 3312, outstandingValue: 11688,
   },
   {
-    id: "PO-1008", vendor: "Fresh Direct", outlet: "Central Warehouse", totalValue: 15000, totalQty: 100,
+    id: "PO-1008", vendor: "Fresh Direct", outlet: "Central Warehouse", supplierType: "Outlet", totalValue: 15000, totalQty: 100,
     receivedQty: 60, pendingQty: 40, createdBy: "Raj", createdOn: "2026-01-08",
     lastReceivingDate: "2026-02-03", status: "Partially Received",
     materials: [
@@ -125,7 +131,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     invoiceValueReceived: 9000, invoiceTaxReceived: 0, outstandingValue: 6000,
   },
   {
-    id: "PO-1009", vendor: "Sysco Foods", outlet: "Main Kitchen", totalValue: 27500, totalQty: 150,
+    id: "PO-1009", vendor: "Sysco Foods", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 27500, totalQty: 150,
     receivedQty: 150, createdBy: "Ankit", createdOn: "2025-12-20", status: "Closed",
     closedDate: "2026-01-15", closedBy: "Meera",
     materials: [
@@ -136,7 +142,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     invoiceValueReceived: 27500, invoiceTaxReceived: 1375, outstandingValue: 0,
   },
   {
-    id: "PO-1010", vendor: "Metro Supply", outlet: "South Outlet", totalValue: 11200, totalQty: 75,
+    id: "PO-1010", vendor: "Metro Supply", outlet: "South Outlet", supplierType: "Vendor", totalValue: 11200, totalQty: 75,
     receivedQty: 75, createdBy: "Raj", createdOn: "2025-12-15", status: "Closed",
     closedDate: "2026-01-10", closedBy: "Ankit",
     materials: [
@@ -146,7 +152,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     invoiceValueReceived: 11200, invoiceTaxReceived: 560, outstandingValue: 0,
   },
   {
-    id: "PO-1011", vendor: "US Foods", outlet: "Central Warehouse", totalValue: 8900, totalQty: 40,
+    id: "PO-1011", vendor: "US Foods", outlet: "Central Warehouse", supplierType: "Vendor", totalValue: 8900, totalQty: 40,
     createdBy: "Meera", createdOn: "2025-12-10", status: "Cancelled",
     cancelledDate: "2025-12-12", cancelledBy: "Ankit",
     materials: [
@@ -155,7 +161,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     poSubtotal: 8900, totalTax: 1068, grandTotal: 9968,
   },
   {
-    id: "PO-1012", vendor: "Fresh Direct", outlet: "Main Kitchen", totalValue: 6200, totalQty: 30,
+    id: "PO-1012", vendor: "Fresh Direct", outlet: "Main Kitchen", supplierType: "Outlet", totalValue: 6200, totalQty: 30,
     createdBy: "Raj", createdOn: "2025-12-05", status: "Cancelled",
     cancelledDate: "2025-12-06", cancelledBy: "Meera",
     materials: [
@@ -197,6 +203,9 @@ export function POStoreProvider({ children }: { children: React.ReactNode }) {
         if (o.id !== id) return o;
         const now = format(new Date(), "yyyy-MM-dd");
         const updates: Partial<PurchaseOrder> = { status, lastUpdated: now };
+        if (status === "Approved") {
+          updates.approvedOn = now;
+        }
         if (status === "Cancelled") {
           updates.cancelledDate = now;
           updates.cancelledBy = "Admin";

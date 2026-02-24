@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
 import {
-  ArrowLeft, CheckCircle2, XCircle, Package, Pencil,
+  ArrowLeft, CheckCircle2, XCircle, Package, Pencil, Download, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { usePOStore, type POStatus } from "@/context/POStoreContext";
 
@@ -28,6 +29,7 @@ export default function ViewOrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getOrder, updateOrderStatus } = usePOStore();
+  const [taxBreakdownOpen, setTaxBreakdownOpen] = useState(true);
 
   const po = id ? getOrder(id) : undefined;
 
@@ -43,6 +45,7 @@ export default function ViewOrderDetails() {
   }
 
   const showReceivingTotals = po.status === "Partially Received" || po.status === "Closed";
+  const showExport = po.status === "Raised" || po.status === "Approved" || po.status === "Cancelled";
 
   const handleAction = (action: string) => {
     switch (action) {
@@ -50,12 +53,8 @@ export default function ViewOrderDetails() {
         navigate("/procurements/new-purchase", { state: { editPO: po.id } });
         break;
       case "approve":
-        updateOrderStatus(po.id, "Raised");
-        navigate("/procurements/purchases", { state: { tab: "raised" } });
-        break;
-      case "raise":
-        updateOrderStatus(po.id, "Raised");
-        navigate("/procurements/purchases", { state: { tab: "raised" } });
+        updateOrderStatus(po.id, "Approved");
+        navigate("/procurements/purchases", { state: { tab: "approved" } });
         break;
       case "receive":
         navigate("/procurements/new-receiving/po", { state: { poId: po.id } });
@@ -67,11 +66,39 @@ export default function ViewOrderDetails() {
     }
   };
 
+  const handleExport = () => {
+    // Placeholder export
+    const blob = new Blob([`PO Details: ${po.id}\nVendor: ${po.vendor}\nTotal: ${fmt(po.grandTotal)}`], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${po.id}-details.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Tax breakdown from stored data or compute from materials
+  const taxBreakdown = po.taxBreakdown ?? (() => {
+    const bd: Record<string, number> = {};
+    if (po.totalTax > 0) {
+      bd["Tax"] = po.totalTax;
+    }
+    return bd;
+  })();
+
   return (
     <div className="space-y-5 max-w-[1000px] pb-28">
-      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
-      </Button>
+      {/* Header row: Back + Export */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
+        </Button>
+        {showExport && (
+          <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExport}>
+            <Download className="h-3.5 w-3.5" /> Export
+          </Button>
+        )}
+      </div>
 
       {/* SECTION 1: PO Details */}
       <Card>
@@ -84,14 +111,20 @@ export default function ViewOrderDetails() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
+          {/* Upper row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4 mb-4">
             <DetailField label="PO ID" value={po.id} highlight />
-            <DetailField label="Vendor" value={po.vendor} />
-            <DetailField label="Outlet" value={po.outlet} />
+            <DetailField label="Buying Outlet" value={po.outlet} />
+            <DetailField label="Supplier Type" value={po.supplierType || "Vendor"} />
+            <DetailField label={po.supplierType === "Outlet" ? "Supplying Outlet" : "Vendor"} value={po.vendor} />
+          </div>
+          {/* Lower row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
             <DetailField label="Created By" value={po.createdBy} />
             <DetailField label="Created On" value={po.createdOn} />
-            <DetailField label="Status" value={po.status} />
-            {po.expectedDelivery && <DetailField label="Expected Delivery" value={po.expectedDelivery} />}
+            <DetailField label="Expected Delivery Date" value={po.expectedDelivery ?? "—"} />
+            <DetailField label="Remarks" value={po.remarks || "—"} />
+            {po.approvedOn && <DetailField label="Approved On" value={po.approvedOn} />}
             {po.lastUpdated && <DetailField label="Last Updated" value={po.lastUpdated} />}
             {po.closedBy && <DetailField label="Closed By" value={po.closedBy} />}
             {po.closedDate && <DetailField label="Closed Date" value={po.closedDate} />}
@@ -144,7 +177,38 @@ export default function ViewOrderDetails() {
         <CardContent>
           <div className="space-y-2.5">
             <SummaryRow label="PO Subtotal" value={fmt(po.poSubtotal)} />
-            <SummaryRow label="Total Tax" value={fmt(po.totalTax)} />
+
+            {/* Total Tax - expandable breakdown */}
+            <div>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setTaxBreakdownOpen((v) => !v)}
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <span>Total Tax</span>
+                  {Object.keys(taxBreakdown).length > 0 && (
+                    taxBreakdownOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
+                  )}
+                </button>
+                <span className="text-sm">{fmt(po.totalTax)}</span>
+              </div>
+              {taxBreakdownOpen && Object.keys(taxBreakdown).length > 0 && (
+                <div className="mt-2 ml-3 space-y-1.5 border-l-2 border-border pl-3">
+                  {Object.entries(taxBreakdown).map(([name, amt]) => (
+                    <div key={name} className="flex justify-between text-xs text-muted-foreground">
+                      <span>{name}</span>
+                      <span className="tabular-nums">{fmt(amt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Other Charges if any */}
+            {(po.otherCharges ?? 0) > 0 && (
+              <SummaryRow label="Other Charges" value={fmt(po.otherCharges!)} />
+            )}
+
             <Separator />
             <SummaryRow label="Grand Total" value={fmt(po.grandTotal)} bold />
 
@@ -161,7 +225,7 @@ export default function ViewOrderDetails() {
         </CardContent>
       </Card>
 
-      {/* Sticky Footer CTAs — only for Purchases statuses */}
+      {/* Sticky Footer CTAs */}
       {(po.status === "Drafted" || po.status === "Raised" || po.status === "Approved") && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-30">
           <div className="max-w-[1000px] mx-auto flex items-center justify-end gap-3 px-6 py-3">

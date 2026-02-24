@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { settingsSubModules } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { Settings as SettingsIcon } from "lucide-react";
@@ -36,7 +37,9 @@ function SettingsContent({ title }: SettingsContentProps) {
 }
 
 export default function Settings() {
-  const [activeSection, setActiveSection] = useState(settingsSubModules[0].path);
+  const location = useLocation();
+  const sectionFromState = (location.state as { section?: string } | null)?.section;
+  const [activeSection, setActiveSection] = useState(sectionFromState || settingsSubModules[0].path);
 
   const activeSub = settingsSubModules.find((s) => s.path === activeSection);
 

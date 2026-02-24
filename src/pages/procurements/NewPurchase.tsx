@@ -8,12 +8,12 @@ import {
   CalendarIcon,
   ChevronDown,
   ChevronUp,
-  MapPin,
   Plus,
-  FileText,
   Tag,
   X,
   Lock,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -39,11 +39,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { usePOStore } from "@/context/POStoreContext";
+import { usePOStore, type SupplierType } from "@/context/POStoreContext";
 
 // --- Mock Data ---
 const MOCK_VENDORS = [
@@ -56,7 +56,7 @@ const MOCK_VENDORS = [
   { id: "v7", name: "Baker's Delight Ingredients", gst: "29AABCB6789J1ZT", location: "Bangalore" },
 ];
 
-const MOCK_MATERIALS = [
+const MOCK_MATERIALS: { id: string; code: string; name: string; category: string; primaryUnit: string; currentStock: number; buyingPrice: number }[] = [
   { id: "m1", code: "RM-001", name: "Basmati Rice", category: "Grains", primaryUnit: "KG", currentStock: 120, buyingPrice: 85 },
   { id: "m2", code: "RM-002", name: "Olive Oil (Extra Virgin)", category: "Oils", primaryUnit: "LTR", currentStock: 45, buyingPrice: 620 },
   { id: "m3", code: "RM-003", name: "Chicken Breast", category: "Meat", primaryUnit: "KG", currentStock: 30, buyingPrice: 280 },
@@ -65,6 +65,10 @@ const MOCK_MATERIALS = [
   { id: "m6", code: "RM-006", name: "Cumin Powder", category: "Spices", primaryUnit: "KG", currentStock: 15, buyingPrice: 450 },
   { id: "m7", code: "RM-007", name: "Mozzarella Cheese", category: "Dairy", primaryUnit: "KG", currentStock: 25, buyingPrice: 520 },
   { id: "m8", code: "RM-008", name: "All-Purpose Flour", category: "Grains", primaryUnit: "KG", currentStock: 300, buyingPrice: 42 },
+  { id: "m9", code: "RM-009", name: "Garlic", category: "Vegetables", primaryUnit: "KG", currentStock: 40, buyingPrice: 120 },
+  { id: "m10", code: "RM-010", name: "Ginger", category: "Vegetables", primaryUnit: "KG", currentStock: 35, buyingPrice: 100 },
+  { id: "m11", code: "RM-011", name: "Salmon Fillet", category: "Seafood", primaryUnit: "KG", currentStock: 10, buyingPrice: 1200 },
+  { id: "m12", code: "RM-012", name: "Cinnamon Sticks", category: "Spices", primaryUnit: "KG", currentStock: 5, buyingPrice: 800 },
 ];
 
 const MOCK_TAX_TYPES = [
@@ -86,14 +90,7 @@ const MOCK_OUTLETS = [
   { id: "o1", name: "Main Kitchen" },
   { id: "o2", name: "Branch - Indiranagar" },
   { id: "o3", name: "Branch - Koramangala" },
-];
-
-const MOCK_TEMPLATES = [
-  { id: "tpl1", vendorId: "v1", name: "Weekly Staples", materialIds: ["m1", "m4"] },
-  { id: "tpl2", vendorId: "v1", name: "Grain Restock", materialIds: ["m1", "m8"] },
-  { id: "tpl2b", vendorId: "v2", name: "Spice Kit", materialIds: ["m5", "m6"] },
-  { id: "tpl3", vendorId: "v3", name: "Dairy Bundle", materialIds: ["m7"] },
-  { id: "tpl4", vendorId: "v5", name: "Produce Pack", materialIds: ["m4", "m5"] },
+  { id: "o4", name: "Central Warehouse" },
 ];
 
 // --- Types ---
@@ -121,6 +118,12 @@ interface POLineItem {
   totalAmount: number;
 }
 
+interface OtherCharge {
+  id: string;
+  description: string;
+  amount: number;
+}
+
 function recalcItemTaxes(item: POLineItem): POLineItem {
   const purchaseAmount = item.buyingPrice * item.purchaseStock;
   const taxes = item.taxes.map((t) => ({
@@ -131,26 +134,27 @@ function recalcItemTaxes(item: POLineItem): POLineItem {
   return { ...item, purchaseAmount, taxes, totalTaxAmount, totalAmount: purchaseAmount + totalTaxAmount };
 }
 
-// --- Vendor Search Dropdown Component ---
-interface VendorSearchDropdownProps {
-  selectedVendor: string | null;
-  onSelect: (vendorId: string) => void;
+// --- Searchable Dropdown Component ---
+interface SearchableDropdownProps {
+  items: { id: string; name: string; detail?: string }[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
   locked: boolean;
+  placeholder: string;
 }
 
-function VendorSearchDropdown({ selectedVendor, onSelect, locked }: VendorSearchDropdownProps) {
+function SearchableDropdown({ items, selectedId, onSelect, locked, placeholder }: SearchableDropdownProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const selectedVendorData = MOCK_VENDORS.find((v) => v.id === selectedVendor);
+  const selected = items.find((v) => v.id === selectedId);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return MOCK_VENDORS;
+    if (!query.trim()) return items;
     const q = query.toLowerCase();
-    return MOCK_VENDORS.filter((v) => v.name.toLowerCase().includes(q));
-  }, [query]);
+    return items.filter((v) => v.name.toLowerCase().includes(q));
+  }, [query, items]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -163,10 +167,10 @@ function VendorSearchDropdown({ selectedVendor, onSelect, locked }: VendorSearch
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  if (locked && selectedVendorData) {
+  if (locked && selected) {
     return (
       <div className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-muted/40 px-3 py-2 text-sm cursor-not-allowed">
-        <span className="text-foreground font-medium truncate">{selectedVendorData.name}</span>
+        <span className="text-foreground font-medium truncate">{selected.name}</span>
         <Lock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 ml-2" />
       </div>
     );
@@ -177,22 +181,17 @@ function VendorSearchDropdown({ selectedVendor, onSelect, locked }: VendorSearch
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
         <input
-          ref={inputRef}
-          value={selectedVendorData && !open ? selectedVendorData.name : query}
+          value={selected && !open ? selected.name : query}
           onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
           onFocus={() => { setOpen(true); setQuery(""); }}
-          placeholder="Search and select vendor"
+          placeholder={placeholder}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          readOnly={false}
         />
-        {selectedVendorData && !open && (
-          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        )}
       </div>
       {open && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-[220px] overflow-auto">
           {filtered.length === 0 ? (
-            <div className="px-3 py-4 text-sm text-center text-muted-foreground">No vendors found</div>
+            <div className="px-3 py-4 text-sm text-center text-muted-foreground">No results found</div>
           ) : (
             filtered.map((v) => (
               <button
@@ -200,11 +199,11 @@ function VendorSearchDropdown({ selectedVendor, onSelect, locked }: VendorSearch
                 onMouseDown={() => { onSelect(v.id); setOpen(false); setQuery(""); }}
                 className={cn(
                   "w-full flex flex-col items-start px-3 py-2.5 text-left hover:bg-muted/60 transition-colors border-b border-border/40 last:border-0",
-                  selectedVendor === v.id && "bg-muted/40"
+                  selectedId === v.id && "bg-muted/40"
                 )}
               >
                 <span className="text-sm font-medium text-foreground">{v.name}</span>
-                <span className="text-xs text-muted-foreground mt-0.5">{v.gst} · {v.location}</span>
+                {v.detail && <span className="text-xs text-muted-foreground mt-0.5">{v.detail}</span>}
               </button>
             ))
           )}
@@ -214,20 +213,224 @@ function VendorSearchDropdown({ selectedVendor, onSelect, locked }: VendorSearch
   );
 }
 
+// --- Material Selection Modal ---
+interface MaterialModalProps {
+  open: boolean;
+  onClose: () => void;
+  existingMaterialIds: string[];
+  onAddMaterials: (materialIds: string[]) => void;
+}
+
+function MaterialSelectionModal({ open, onClose, existingMaterialIds, onAddMaterials }: MaterialModalProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(existingMaterialIds));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"all" | "selected">("all");
+
+  // Reset when opening
+  useEffect(() => {
+    if (open) {
+      setSelectedIds(new Set(existingMaterialIds));
+      setSearchQuery("");
+      setViewMode("all");
+    }
+  }, [open, existingMaterialIds]);
+
+  const categories = useMemo(() => {
+    const cats: Record<string, typeof MOCK_MATERIALS> = {};
+    MOCK_MATERIALS.forEach((m) => {
+      if (!cats[m.category]) cats[m.category] = [];
+      cats[m.category].push(m);
+    });
+    return cats;
+  }, []);
+
+  const filteredCategories = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    const result: Record<string, typeof MOCK_MATERIALS> = {};
+    Object.entries(categories).forEach(([cat, mats]) => {
+      const catMatch = cat.toLowerCase().includes(q);
+      const filteredMats = mats.filter((m) => {
+        if (viewMode === "selected" && !selectedIds.has(m.id)) return false;
+        if (!q) return true;
+        return catMatch || m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q);
+      });
+      if (filteredMats.length > 0) result[cat] = filteredMats;
+    });
+    return result;
+  }, [categories, searchQuery, viewMode, selectedIds]);
+
+  const toggleMaterial = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleCategory = (cat: string) => {
+    const mats = categories[cat] || [];
+    const allSelected = mats.every((m) => selectedIds.has(m.id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      mats.forEach((m) => {
+        if (allSelected) next.delete(m.id);
+        else next.add(m.id);
+      });
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    const allSelected = MOCK_MATERIALS.every((m) => selectedIds.has(m.id));
+    if (allSelected) setSelectedIds(new Set(existingMaterialIds));
+    else setSelectedIds(new Set(MOCK_MATERIALS.map((m) => m.id)));
+  };
+
+  const handleConfirm = () => {
+    onAddMaterials(Array.from(selectedIds));
+    onClose();
+  };
+
+  const allSelected = MOCK_MATERIALS.every((m) => selectedIds.has(m.id));
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Add Materials</DialogTitle>
+        </DialogHeader>
+
+        {/* Global search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search categories or materials..."
+            className="pl-9 h-9 text-sm"
+          />
+        </div>
+
+        {/* Toggle: All / Selected */}
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/40">
+            <button
+              onClick={() => setViewMode("all")}
+              className={cn("px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                viewMode === "all" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >All</button>
+            <button
+              onClick={() => setViewMode("selected")}
+              className={cn("px-3 py-1 text-xs font-medium rounded-md transition-colors",
+                viewMode === "selected" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >Selected ({selectedIds.size})</button>
+          </div>
+          <div className="ml-auto">
+            <button onClick={toggleAll} className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+              {allSelected ? "Deselect All" : "Select All"}
+            </button>
+          </div>
+        </div>
+
+        {/* Two-panel: Categories (left) + Materials (right) */}
+        <div className="flex gap-4 flex-1 min-h-0 overflow-hidden border border-border rounded-lg">
+          {/* Left: Categories */}
+          <div className="w-[200px] border-r border-border overflow-y-auto py-2 shrink-0">
+            {Object.entries(filteredCategories).map(([cat, mats]) => {
+              const allCatSelected = (categories[cat] || []).every((m) => selectedIds.has(m.id));
+              const someCatSelected = (categories[cat] || []).some((m) => selectedIds.has(m.id));
+              return (
+                <button
+                  key={cat}
+                  onClick={() => toggleCategory(cat)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted/60 transition-colors text-left"
+                >
+                  <Checkbox
+                    checked={allCatSelected ? true : someCatSelected ? "indeterminate" : false}
+                    onCheckedChange={() => toggleCategory(cat)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <span className={cn("font-medium text-xs", allCatSelected && "text-primary")}>{cat}</span>
+                  <span className="text-[10px] text-muted-foreground ml-auto">({mats.length})</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right: Materials */}
+          <div className="flex-1 overflow-y-auto py-2">
+            {Object.entries(filteredCategories).map(([cat, mats]) => (
+              <div key={cat} className="mb-3">
+                <p className="px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">{cat}</p>
+                {mats.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleMaterial(m.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted/40 transition-colors text-left",
+                      selectedIds.has(m.id) && "bg-cento-yellow-tint"
+                    )}
+                  >
+                    <Checkbox
+                      checked={selectedIds.has(m.id)}
+                      onCheckedChange={() => toggleMaterial(m.id)}
+                      className="h-3.5 w-3.5"
+                    />
+                    <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">{m.code}</span>
+                    <span className="font-medium text-sm flex-1 truncate">{m.name}</span>
+                    <span className="text-xs text-muted-foreground">{m.primaryUnit}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+            {Object.keys(filteredCategories).length === 0 && (
+              <div className="text-center py-8 text-sm text-muted-foreground">No materials found</div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button variant="cento" onClick={handleConfirm}>
+            Add {selectedIds.size} Material{selectedIds.size !== 1 ? "s" : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ===================== MAIN COMPONENT =====================
+
 export default function NewPurchase() {
   const navigate = useNavigate();
   const { addOrder } = usePOStore();
-  const isAdmin = true;
 
   // Core state
-  const [selectedOutlet, setSelectedOutlet] = useState("o1");
+  const [buyerOutlet, setBuyerOutlet] = useState("o1");
+  const [outletEditOpen, setOutletEditOpen] = useState(false);
+  const [outletSearchQuery, setOutletSearchQuery] = useState("");
+  const outletEditRef = useRef<HTMLDivElement>(null);
+
+  const [supplierType, setSupplierType] = useState<SupplierType>("Vendor");
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [selectedSupplyingOutlet, setSelectedSupplyingOutlet] = useState<string | null>(null);
   const [lineItems, setLineItems] = useState<POLineItem[]>([]);
   const [deliveryDate, setDeliveryDate] = useState<Date>();
   const [eddError, setEddError] = useState(false);
   const [remarks, setRemarks] = useState("");
+
+  // Other charges
+  const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([]);
+
+  // Search for table filter
+  const [tableSearchQuery, setTableSearchQuery] = useState("");
+
+  // Material modal
+  const [materialModalOpen, setMaterialModalOpen] = useState(false);
 
   // Dialog states
   const [taxModalItemId, setTaxModalItemId] = useState<string | null>(null);
@@ -235,86 +438,120 @@ export default function NewPurchase() {
   const [bulkTaxModalOpen, setBulkTaxModalOpen] = useState(false);
   const [bulkTaxTypeId, setBulkTaxTypeId] = useState("");
   const [activeBulkTax, setActiveBulkTax] = useState<{ taxTypeId: string; taxName: string; taxRate: number } | null>(null);
-  const [templateModalOpen, setTemplateModalOpen] = useState(false);
-  const [templateVendorId, setTemplateVendorId] = useState("");
-  const [selectedTemplateId, setSelectedTemplateId] = useState("");
-  const [taxBreakdownOpen, setTaxBreakdownOpen] = useState(false);
+  const [taxBreakdownOpen, setTaxBreakdownOpen] = useState(true);
 
-  // Vendor is locked once materials are added
-  const vendorLocked = lineItems.length > 0;
+  // Supplier/toggle is locked once materials are added
+  const supplierLocked = lineItems.length > 0;
+  const supplierSelected = supplierType === "Vendor" ? !!selectedVendor : !!selectedSupplyingOutlet;
+  const supplierName = supplierType === "Vendor"
+    ? MOCK_VENDORS.find((v) => v.id === selectedVendor)?.name
+    : MOCK_OUTLETS.find((o) => o.id === selectedSupplyingOutlet)?.name;
 
-  const selectedVendorData = MOCK_VENDORS.find((v) => v.id === selectedVendor);
+  const buyerOutletName = MOCK_OUTLETS.find((o) => o.id === buyerOutlet)?.name ?? "Unknown";
 
-  const filteredMaterials = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
-    return MOCK_MATERIALS.filter(
-      (m) => m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q)
-    );
-  }, [searchQuery]);
+  // Outlets for supplying (exclude buyer)
+  const supplyingOutlets = useMemo(() =>
+    MOCK_OUTLETS.filter((o) => o.id !== buyerOutlet).map((o) => ({ id: o.id, name: o.name })),
+    [buyerOutlet]
+  );
+
+  // Vendor items for dropdown
+  const vendorItems = useMemo(() =>
+    MOCK_VENDORS.map((v) => ({ id: v.id, name: v.name, detail: `${v.gst} · ${v.location}` })),
+    []
+  );
+
+  // Outlet edit dropdown
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (outletEditRef.current && !outletEditRef.current.contains(e.target as Node)) {
+        setOutletEditOpen(false);
+        setOutletSearchQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const filteredOutletsForBuyer = useMemo(() => {
+    if (!outletSearchQuery.trim()) return MOCK_OUTLETS;
+    const q = outletSearchQuery.toLowerCase();
+    return MOCK_OUTLETS.filter((o) => o.name.toLowerCase().includes(q));
+  }, [outletSearchQuery]);
+
+  // Filtered table items
+  const displayItems = useMemo(() => {
+    if (!tableSearchQuery.trim()) return lineItems;
+    const q = tableSearchQuery.toLowerCase();
+    return lineItems.filter((li) => li.name.toLowerCase().includes(q) || li.code.toLowerCase().includes(q));
+  }, [lineItems, tableSearchQuery]);
 
   // Tax modal derived
   const taxModalItem = lineItems.find((li) => li.id === taxModalItemId);
   const taxModalSelectedTax = MOCK_TAX_TYPES.find((t) => t.id === taxModalTaxTypeId);
   const bulkSelectedTax = MOCK_TAX_TYPES.find((t) => t.id === bulkTaxTypeId);
 
-  // Template derived
-  const effectiveTemplateVendorId = selectedVendor ? selectedVendor : templateVendorId;
-  const vendorTemplates = MOCK_TEMPLATES.filter((t) => t.vendorId === effectiveTemplateVendorId);
-  const selectedTemplate = MOCK_TEMPLATES.find((t) => t.id === selectedTemplateId);
-  const templateMaterials = selectedTemplate
-    ? MOCK_MATERIALS.filter((m) => selectedTemplate.materialIds.includes(m.id))
-    : [];
-
   // Totals
   const totals = useMemo(() => {
     const subtotal = lineItems.reduce((s, li) => s + li.purchaseAmount, 0);
     const totalTax = lineItems.reduce((s, li) => s + li.totalTaxAmount, 0);
+    const totalOtherCharges = otherCharges.reduce((s, c) => s + c.amount, 0);
     const taxBreakdown: Record<string, number> = {};
     lineItems.forEach((li) => {
       li.taxes.forEach((t) => {
         taxBreakdown[t.taxName] = (taxBreakdown[t.taxName] ?? 0) + t.taxAmount;
       });
     });
-    return { subtotal, totalTax, grandTotal: subtotal + totalTax, taxBreakdown };
-  }, [lineItems]);
+    return { subtotal, totalTax, totalOtherCharges, grandTotal: subtotal + totalTax + totalOtherCharges, taxBreakdown };
+  }, [lineItems, otherCharges]);
 
   const hasItems = lineItems.length > 0;
-  const canGenerate = hasItems && !!selectedVendor && !!deliveryDate;
+  const canGenerate = hasItems && supplierSelected && !!deliveryDate;
 
   // --- Handlers ---
-  const handleVendorSelect = useCallback((vendorId: string) => {
-    if (!vendorLocked) {
-      setSelectedVendor(vendorId);
-    }
-  }, [vendorLocked]);
+  const handleSupplierTypeChange = (type: SupplierType) => {
+    if (supplierLocked) return;
+    setSupplierType(type);
+    setSelectedVendor(null);
+    setSelectedSupplyingOutlet(null);
+  };
 
-  const addMaterial = useCallback((material: (typeof MOCK_MATERIALS)[0]) => {
-    if (lineItems.some((li) => li.materialId === material.id)) {
-      toast({ title: "Already added", description: `${material.name} is already in the list.` });
-      return;
-    }
-    const initialTaxes: TaxEntry[] = activeBulkTax
-      ? [{ id: crypto.randomUUID(), taxTypeId: activeBulkTax.taxTypeId, taxName: activeBulkTax.taxName, taxRate: activeBulkTax.taxRate, taxAmount: 0 }]
-      : [];
-    const newItem: POLineItem = {
-      id: crypto.randomUUID(),
-      materialId: material.id,
-      code: material.code,
-      name: material.name,
-      category: material.category,
-      unit: material.primaryUnit,
-      currentStock: material.currentStock,
-      buyingPrice: material.buyingPrice,
-      purchaseStock: 0,
-      purchaseAmount: 0,
-      taxes: initialTaxes,
-      totalTaxAmount: 0,
-      totalAmount: 0,
-    };
-    setLineItems((prev) => [newItem, ...prev]);
-    setSearchQuery("");
-  }, [lineItems, activeBulkTax]);
+  const addMaterialsFromModal = useCallback((materialIds: string[]) => {
+    setLineItems((prev) => {
+      const existingIds = new Set(prev.map((li) => li.materialId));
+      const newItems = [...prev];
+
+      // Remove materials no longer selected
+      const selectedSet = new Set(materialIds);
+      const filtered = newItems.filter((li) => selectedSet.has(li.materialId));
+
+      // Add new materials
+      materialIds.forEach((id) => {
+        if (existingIds.has(id)) return;
+        const mat = MOCK_MATERIALS.find((m) => m.id === id);
+        if (!mat) return;
+        filtered.push({
+          id: crypto.randomUUID(),
+          materialId: mat.id,
+          code: mat.code,
+          name: mat.name,
+          category: mat.category,
+          unit: mat.primaryUnit,
+          currentStock: mat.currentStock,
+          buyingPrice: mat.buyingPrice,
+          purchaseStock: 0,
+          purchaseAmount: 0,
+          taxes: activeBulkTax
+            ? [{ id: crypto.randomUUID(), taxTypeId: activeBulkTax.taxTypeId, taxName: activeBulkTax.taxName, taxRate: activeBulkTax.taxRate, taxAmount: 0 }]
+            : [],
+          totalTaxAmount: 0,
+          totalAmount: 0,
+        });
+      });
+
+      return filtered;
+    });
+  }, [activeBulkTax]);
 
   const removeItem = useCallback((id: string) => {
     setLineItems((prev) => prev.filter((li) => li.id !== id));
@@ -343,7 +580,7 @@ export default function NewPurchase() {
       prev.map((li) => {
         if (li.id !== taxModalItemId) return li;
         if (li.taxes.some((t) => t.taxTypeId === taxModalTaxTypeId)) {
-          toast({ title: "Tax already applied", description: `${tax.name} is already applied to this material.` });
+          toast({ title: "Tax already applied", description: `${tax.name} is already applied.` });
           return li;
         }
         const newTax: TaxEntry = {
@@ -374,9 +611,7 @@ export default function NewPurchase() {
     if (!bulkTaxTypeId) return;
     const tax = MOCK_TAX_TYPES.find((t) => t.id === bulkTaxTypeId);
     if (!tax) return;
-    // Store as active bulk tax so new materials also get it applied
     setActiveBulkTax({ taxTypeId: tax.id, taxName: tax.name, taxRate: tax.rate });
-    // Apply to all current materials
     setLineItems((prev) =>
       prev.map((li) => {
         let taxes = [...li.taxes];
@@ -391,49 +626,18 @@ export default function NewPurchase() {
     toast({ title: "Tax applied", description: `${tax.name} ${tax.rate}% applied to all materials.` });
   };
 
-  // Template handler
-  const addFromTemplate = () => {
-    if (!selectedTemplateId) return;
-    const template = MOCK_TEMPLATES.find((t) => t.id === selectedTemplateId);
-    if (!template) return;
-    const materialsToAdd = MOCK_MATERIALS.filter((m) => template.materialIds.includes(m.id));
-    let added = 0;
-    setLineItems((prev) => {
-      const newItems = [...prev];
-      materialsToAdd.forEach((material) => {
-        if (newItems.some((li) => li.materialId === material.id)) return;
-        newItems.unshift({
-          id: crypto.randomUUID(),
-          materialId: material.id,
-          code: material.code,
-          name: material.name,
-          category: material.category,
-          unit: material.primaryUnit,
-          currentStock: material.currentStock,
-          buyingPrice: material.buyingPrice,
-          purchaseStock: 0,
-          purchaseAmount: 0,
-          taxes: [],
-          totalTaxAmount: 0,
-          totalAmount: 0,
-        });
-        added++;
-      });
-      return newItems;
-    });
-    setTemplateModalOpen(false);
-    setSelectedTemplateId("");
-    toast({ title: "Template applied", description: `${added} material(s) added from template.` });
+  // Other charges handlers
+  const addOtherCharge = () => {
+    setOtherCharges((prev) => [...prev, { id: crypto.randomUUID(), description: "", amount: 0 }]);
+  };
+  const updateOtherCharge = (id: string, updates: Partial<OtherCharge>) => {
+    setOtherCharges((prev) => prev.map((c) => c.id === id ? { ...c, ...updates } : c));
+  };
+  const removeOtherCharge = (id: string) => {
+    setOtherCharges((prev) => prev.filter((c) => c.id !== id));
   };
 
-  const handleGenerate = () => {
-    if (!deliveryDate) {
-      setEddError(true);
-      return;
-    }
-    setEddError(false);
-    if (!hasItems || !selectedVendorData) return;
-    const outletName = MOCK_OUTLETS.find((o) => o.id === selectedOutlet)?.name ?? "Unknown";
+  const buildOrderPayload = (status: "Drafted" | "Raised") => {
     const now = format(new Date(), "yyyy-MM-dd");
     const materials = lineItems.map((li) => ({
       name: li.name,
@@ -444,108 +648,163 @@ export default function NewPurchase() {
       receivedQty: 0,
       pendingQty: li.purchaseStock,
     }));
-    addOrder({
-      vendor: selectedVendorData.name,
-      outlet: outletName,
+    return {
+      vendor: supplierName ?? "",
+      outlet: buyerOutletName,
+      supplierType,
       totalValue: totals.grandTotal,
       totalQty: lineItems.reduce((s, li) => s + li.purchaseStock, 0),
       createdBy: "Admin",
       createdOn: now,
       lastUpdated: now,
-      status: "Raised",
-      expectedDelivery: format(deliveryDate, "yyyy-MM-dd"),
-      remarks,
-      materials,
-      poSubtotal: totals.subtotal,
-      totalTax: totals.totalTax,
-      grandTotal: totals.grandTotal,
-    });
-    toast({ title: "PO Generated", description: "Purchase order has been raised." });
-    navigate("/procurements/purchases", { state: { tab: "raised" } });
-  };
-
-  const handleDraft = () => {
-    if (!hasItems || !selectedVendorData) return;
-    const outletName = MOCK_OUTLETS.find((o) => o.id === selectedOutlet)?.name ?? "Unknown";
-    const now = format(new Date(), "yyyy-MM-dd");
-    const materials = lineItems.map((li) => ({
-      name: li.name,
-      orderedQty: li.purchaseStock,
-      unitPrice: li.buyingPrice,
-      taxPct: li.taxes.reduce((s, t) => s + t.taxRate, 0),
-      lineTotal: li.purchaseAmount,
-      receivedQty: 0,
-      pendingQty: li.purchaseStock,
-    }));
-    addOrder({
-      vendor: selectedVendorData.name,
-      outlet: outletName,
-      totalValue: totals.grandTotal,
-      totalQty: lineItems.reduce((s, li) => s + li.purchaseStock, 0),
-      createdBy: "Admin",
-      createdOn: now,
-      lastUpdated: now,
-      status: "Drafted",
+      status,
       expectedDelivery: deliveryDate ? format(deliveryDate, "yyyy-MM-dd") : undefined,
       remarks,
       materials,
       poSubtotal: totals.subtotal,
       totalTax: totals.totalTax,
       grandTotal: totals.grandTotal,
-    });
+      otherCharges: totals.totalOtherCharges,
+      taxBreakdown: totals.taxBreakdown,
+    } as const;
+  };
+
+  const handleGenerate = () => {
+    if (!deliveryDate) { setEddError(true); return; }
+    setEddError(false);
+    if (!hasItems || !supplierSelected) return;
+    addOrder(buildOrderPayload("Raised"));
+    toast({ title: "PO Generated", description: "Purchase order has been raised." });
+    navigate("/procurements/purchases", { state: { tab: "raised" } });
+  };
+
+  const handleDraft = () => {
+    if (!hasItems || !supplierSelected) return;
+    addOrder(buildOrderPayload("Drafted"));
     toast({ title: "Draft saved", description: "Purchase order saved as draft." });
     navigate("/procurements/purchases", { state: { tab: "drafted" } });
+  };
+
+  const handleSaveAsTemplate = () => {
+    toast({ title: "Redirecting to Purchase Management", description: "Configure your template settings." });
+    navigate("/settings", { state: { section: "/settings/purchase-management" } });
   };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto">
 
-      {/* ── Page Header ── */}
-      <div className="flex items-center gap-3 mb-6 flex-shrink-0">
-        <div className="h-9 w-9 rounded-xl bg-cento-yellow-tint-strong flex items-center justify-center">
-          <FilePlus className="h-5 w-5 text-cento-yellow" strokeWidth={1.5} />
+      {/* ── Page Header with Buyer's Outlet ── */}
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-cento-yellow-tint-strong flex items-center justify-center">
+            <FilePlus className="h-5 w-5 text-cento-yellow" strokeWidth={1.5} />
+          </div>
+          <div>
+            <h2 className="cento-page-title">New Purchase Order</h2>
+            <p className="cento-helper mt-0.5">Create a new purchase order</p>
+          </div>
         </div>
-        <div>
-          <h2 className="cento-page-title">New Purchase Order</h2>
-          <p className="cento-helper mt-0.5">Create a new purchase order</p>
+
+        {/* Buyer's Outlet */}
+        <div className="text-right relative" ref={outletEditRef}>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Buyer's Outlet</p>
+          <div className="flex items-center gap-1.5 justify-end">
+            <span className="text-sm font-semibold text-foreground">{buyerOutletName}</span>
+            <button
+              onClick={() => setOutletEditOpen((v) => !v)}
+              className="p-1 rounded hover:bg-muted/60 transition-colors"
+            >
+              <Pencil className="h-3 w-3 text-muted-foreground" />
+            </button>
+          </div>
+          {outletEditOpen && (
+            <div className="absolute right-0 top-full mt-1 w-56 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+              <div className="p-2 border-b border-border">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  <input
+                    value={outletSearchQuery}
+                    onChange={(e) => setOutletSearchQuery(e.target.value)}
+                    placeholder="Search outlets..."
+                    className="w-full h-7 pl-7 pr-2 text-xs rounded border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              <div className="max-h-[180px] overflow-y-auto">
+                {filteredOutletsForBuyer.map((o) => (
+                  <button
+                    key={o.id}
+                    onMouseDown={() => {
+                      setBuyerOutlet(o.id);
+                      setOutletEditOpen(false);
+                      setOutletSearchQuery("");
+                      // If supplying outlet was the same, clear it
+                      if (selectedSupplyingOutlet === o.id) setSelectedSupplyingOutlet(null);
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-muted/60 transition-colors",
+                      buyerOutlet === o.id && "bg-cento-yellow-tint font-medium"
+                    )}
+                  >
+                    {buyerOutlet === o.id && <Check className="h-3 w-3 text-primary flex-shrink-0" />}
+                    <span className={buyerOutlet !== o.id ? "ml-5" : ""}>{o.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── ROW 1: Outlet | Vendor | EDD | Add from Template ── */}
+      {/* ── Supplier Section ── */}
       <div className="bg-card border border-border rounded-xl px-6 py-5 mb-6 flex-shrink-0 shadow-sm">
-        <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-          {/* Select Outlet */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-              <MapPin className="h-3 w-3" />
-              Select Outlet
-            </Label>
-            <Select value={selectedOutlet} onValueChange={setSelectedOutlet} disabled={!isAdmin}>
-              <SelectTrigger className="h-10 bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MOCK_OUTLETS.map((o) => (
-                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Vendor */}
+          {/* Supplier Type Toggle + Dropdown */}
           <div className="flex flex-col gap-1.5">
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Vendor
-              {vendorLocked && (
-                <span className="ml-1.5 text-xs font-normal text-muted-foreground normal-case tracking-normal">(locked)</span>
-              )}
+              Supplier Type
+              {supplierLocked && <span className="ml-1.5 text-xs font-normal normal-case tracking-normal">(locked)</span>}
             </Label>
-            <VendorSearchDropdown
-              selectedVendor={selectedVendor}
-              onSelect={handleVendorSelect}
-              locked={vendorLocked}
-            />
+            <div className={cn("inline-flex rounded-lg border border-border p-0.5 bg-muted/40 w-fit", supplierLocked && "opacity-60 pointer-events-none")}>
+              <button
+                onClick={() => handleSupplierTypeChange("Vendor")}
+                className={cn("px-4 py-1.5 text-xs font-medium rounded-md transition-colors",
+                  supplierType === "Vendor" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >Vendor</button>
+              <button
+                onClick={() => handleSupplierTypeChange("Outlet")}
+                className={cn("px-4 py-1.5 text-xs font-medium rounded-md transition-colors",
+                  supplierType === "Outlet" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >Outlet</button>
+            </div>
+          </div>
+
+          {/* Vendor / Supplying Outlet dropdown */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {supplierType === "Vendor" ? "Vendor" : "Supplying Outlet"}
+            </Label>
+            {supplierType === "Vendor" ? (
+              <SearchableDropdown
+                items={vendorItems}
+                selectedId={selectedVendor}
+                onSelect={(id) => !supplierLocked && setSelectedVendor(id)}
+                locked={supplierLocked}
+                placeholder="Search and select vendor"
+              />
+            ) : (
+              <SearchableDropdown
+                items={supplyingOutlets}
+                selectedId={selectedSupplyingOutlet}
+                onSelect={(id) => !supplierLocked && setSelectedSupplyingOutlet(id)}
+                locked={supplierLocked}
+                placeholder="Search and select outlet"
+              />
+            )}
           </div>
 
           {/* Expected Delivery Date */}
@@ -578,68 +837,38 @@ export default function NewPurchase() {
                 />
               </PopoverContent>
             </Popover>
-            {eddError && (
-              <p className="text-xs text-destructive">Expected Delivery Date is required.</p>
-            )}
-          </div>
-
-          {/* Add from Template */}
-          <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider opacity-0 select-none">
-              Actions
-            </Label>
-            <Button
-              variant="outline"
-              className="h-10 bg-background flex items-center gap-2"
-              disabled={!selectedVendor}
-              onClick={() => {
-                setTemplateVendorId(selectedVendor ?? "");
-                setSelectedTemplateId("");
-                setTemplateModalOpen(true);
-              }}
-            >
-              <FileText className="h-4 w-4" />
-              Add from Template
-            </Button>
+            {eddError && <p className="text-xs text-destructive">Expected Delivery Date is required.</p>}
           </div>
         </div>
       </div>
 
-      {/* ── ROW 2: Material Search (shown when vendor selected) ── */}
-      {selectedVendor && (
-        <div className="mb-4 flex-shrink-0">
-          <div className="relative max-w-md">
+      {/* ── Search bar + Add Material CTA ── */}
+      {supplierSelected && (
+        <div className="mb-4 flex-shrink-0 flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-              placeholder="Search and add materials..."
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 pl-9 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            <Input
+              value={tableSearchQuery}
+              onChange={(e) => setTableSearchQuery(e.target.value)}
+              placeholder="Search materials in the PO..."
+              className="pl-9 h-9 text-sm bg-card"
             />
-            {searchFocused && filteredMaterials.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-[240px] overflow-auto">
-                {filteredMaterials.map((m) => (
-                  <button
-                    key={m.id}
-                    onMouseDown={() => addMaterial(m)}
-                    className="w-full flex items-center gap-3 px-3 py-3 text-sm hover:bg-muted/60 transition-colors text-left border-b border-border/40 last:border-0"
-                  >
-                    <span className="text-muted-foreground font-mono text-xs w-16 flex-shrink-0">{m.code}</span>
-                    <span className="font-medium flex-1 truncate">{m.name}</span>
-                    <span className="text-xs text-muted-foreground">{m.category}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
+          <Button
+            variant="cento"
+            size="sm"
+            className="h-9 gap-1.5"
+            onClick={() => setMaterialModalOpen(true)}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Material
+          </Button>
         </div>
       )}
 
-      {/* ── ROW 3: Materials Table ── */}
-      {selectedVendor ? (
-        <div className="bg-card border border-border rounded-xl shadow-sm mb-8 flex-shrink-0 overflow-hidden">
+      {/* ── Materials Table ── */}
+      {supplierSelected ? (
+        <div className="bg-card border border-border rounded-xl shadow-sm mb-6 flex-shrink-0 overflow-hidden">
           {/* Table header bar */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/20">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -678,14 +907,21 @@ export default function NewPurchase() {
                 </tr>
               </thead>
               <tbody>
-                  {lineItems.length === 0 && (
+                {displayItems.length === 0 && lineItems.length === 0 && (
                   <tr>
                     <td colSpan={12} className="text-center text-muted-foreground text-sm py-14">
-                      Search for materials above to add them to this PO
+                      Click "Add Material" to start adding materials
                     </td>
                   </tr>
                 )}
-                {lineItems.map((item) => (
+                {displayItems.length === 0 && lineItems.length > 0 && (
+                  <tr>
+                    <td colSpan={12} className="text-center text-muted-foreground text-sm py-14">
+                      No materials match your search
+                    </td>
+                  </tr>
+                )}
+                {displayItems.map((item) => (
                   <tr key={item.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors align-top">
                     <td className="px-4 py-4 font-mono text-xs text-muted-foreground whitespace-nowrap">{item.code}</td>
                     <td className="px-4 py-4 font-medium whitespace-nowrap">{item.name}</td>
@@ -736,11 +972,11 @@ export default function NewPurchase() {
                           </div>
                         ))}
                         <button
-                          className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors w-fit py-0.5"
+                          className="inline-flex items-center gap-1 text-[11px] text-primary/80 hover:text-primary font-medium transition-colors w-fit rounded border border-dashed border-primary/30 hover:border-primary/50 px-2 py-0.5"
                           onClick={() => openTaxModal(item.id)}
                         >
-                          <Plus className="h-3 w-3" />
-                          Add Tax
+                          <Plus className="h-2.5 w-2.5" />
+                          Add
                         </button>
                       </div>
                     </td>
@@ -764,47 +1000,83 @@ export default function NewPurchase() {
           </div>
         </div>
       ) : (
-        /* Empty state when no vendor selected */
-        <div className="bg-card border border-border rounded-xl shadow-sm flex items-center justify-center py-20 mb-8">
+        <div className="bg-card border border-border rounded-xl shadow-sm flex items-center justify-center py-20 mb-6">
           <div className="text-center">
             <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
               <FilePlus className="h-6 w-6 text-muted-foreground" strokeWidth={1.5} />
             </div>
-            <p className="text-sm font-medium text-foreground">Select a vendor to get started</p>
-            <p className="text-xs text-muted-foreground mt-1">Choose a vendor above to begin adding materials</p>
+            <p className="text-sm font-medium text-foreground">Select a {supplierType.toLowerCase()} to get started</p>
+            <p className="text-xs text-muted-foreground mt-1">Choose a {supplierType.toLowerCase()} above to begin adding materials</p>
           </div>
         </div>
       )}
 
-      {/* ── ROW 4: PO Remarks + PO Summary + CTAs ── */}
-      {selectedVendor && (
-        <div className="flex gap-6 mb-8 flex-shrink-0 items-start">
+      {/* ── Other Charges Section ── */}
+      {supplierSelected && (
+        <div className="bg-card border border-border rounded-xl shadow-sm p-5 mb-6 flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Other Charges</p>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={addOtherCharge}>
+              <Plus className="h-3 w-3" /> Add Charge
+            </Button>
+          </div>
+          {otherCharges.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No additional charges added.</p>
+          ) : (
+            <div className="space-y-2">
+              {otherCharges.map((charge) => (
+                <div key={charge.id} className="flex items-center gap-3">
+                  <Input
+                    placeholder="Description (e.g. Freight, Handling)"
+                    value={charge.description}
+                    onChange={(e) => updateOtherCharge(charge.id, { description: e.target.value })}
+                    className="flex-1 h-8 text-sm bg-background"
+                  />
+                  <div className="relative w-32">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₹</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={charge.amount || ""}
+                      onChange={(e) => updateOtherCharge(charge.id, { amount: parseFloat(e.target.value) || 0 })}
+                      className="h-8 text-sm text-right bg-background pl-6"
+                    />
+                  </div>
+                  <button onClick={() => removeOtherCharge(charge.id)} className="p-1 rounded hover:bg-destructive/10">
+                    <Trash2 className="h-3.5 w-3.5 text-destructive/70" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-          {/* PO Remarks — 60% */}
+      {/* ── PO Remarks + PO Summary + CTAs ── */}
+      {supplierSelected && (
+        <div className="flex gap-6 mb-8 flex-shrink-0 items-start">
+          {/* PO Remarks */}
           <div className="bg-card border border-border rounded-xl shadow-sm p-6 flex-[3]">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">PO Remarks</p>
             <Textarea
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="Add any notes or instructions for this purchase order..."
+              placeholder="Add any notes or instructions..."
               className="min-h-[120px] resize-none bg-background text-sm border-border"
             />
           </div>
 
-          {/* PO Summary + CTAs — 40% */}
+          {/* PO Summary + CTAs */}
           <div className="flex-[2] flex flex-col gap-4">
-            {/* PO Summary Card */}
             <div className="bg-card border border-border rounded-xl shadow-sm p-6">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">PO Summary</p>
-
               <div className="space-y-3">
-                {/* Subtotal */}
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="tabular-nums">₹{totals.subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                 </div>
 
-                {/* Total Tax with collapsible breakdown */}
+                {/* Tax breakdown */}
                 <div>
                   <div className="flex justify-between items-center text-sm">
                     <button
@@ -813,14 +1085,11 @@ export default function NewPurchase() {
                     >
                       <span>Total Tax</span>
                       {Object.keys(totals.taxBreakdown).length > 0 && (
-                        taxBreakdownOpen
-                          ? <ChevronUp className="h-3.5 w-3.5" />
-                          : <ChevronDown className="h-3.5 w-3.5" />
+                        taxBreakdownOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />
                       )}
                     </button>
                     <span className="tabular-nums">₹{totals.totalTax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
                   </div>
-
                   {taxBreakdownOpen && Object.keys(totals.taxBreakdown).length > 0 && (
                     <div className="mt-2 ml-3 space-y-1.5 border-l-2 border-border pl-3">
                       {Object.entries(totals.taxBreakdown).map(([name, amt]) => (
@@ -831,16 +1100,18 @@ export default function NewPurchase() {
                       ))}
                     </div>
                   )}
-
-                  {!taxBreakdownOpen && Object.keys(totals.taxBreakdown).length === 0 && (
-                    <p className="text-xs text-muted-foreground mt-1 ml-0.5">No taxes applied</p>
-                  )}
                 </div>
 
-                {/* Divider */}
+                {/* Other Charges */}
+                {totals.totalOtherCharges > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Other Charges</span>
+                    <span className="tabular-nums">₹{totals.totalOtherCharges.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+
                 <div className="border-t border-border" />
 
-                {/* Grand Total */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-semibold text-foreground">Total PO Amount</span>
                   <span className="text-xl font-bold text-foreground tabular-nums">
@@ -855,30 +1126,38 @@ export default function NewPurchase() {
               {!canGenerate && (
                 <p className="text-xs text-muted-foreground text-right">Complete required fields to generate PO.</p>
               )}
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-3 justify-between">
                 <Button
                   variant="outline"
                   disabled={!hasItems}
-                  className={cn("bg-background min-w-[100px]", !hasItems && "opacity-40 cursor-not-allowed")}
-                  onClick={handleDraft}
+                  className={cn("bg-background", !hasItems && "opacity-40 cursor-not-allowed")}
+                  onClick={handleSaveAsTemplate}
                 >
-                  Save as Draft
+                  Save as Template
                 </Button>
-                <Button
-                  variant="cento"
-                  disabled={!canGenerate}
-                  className={cn("min-w-[120px]", !canGenerate && "opacity-40 cursor-not-allowed")}
-                  onClick={handleGenerate}
-                  title={!canGenerate ? "Complete required fields to generate PO." : undefined}
-                >
-                  Generate PO
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    disabled={!hasItems}
+                    className={cn("bg-background min-w-[100px]", !hasItems && "opacity-40 cursor-not-allowed")}
+                    onClick={handleDraft}
+                  >
+                    Save as Draft
+                  </Button>
+                  <Button
+                    variant="cento"
+                    disabled={!canGenerate}
+                    className={cn("min-w-[120px]", !canGenerate && "opacity-40 cursor-not-allowed")}
+                    onClick={handleGenerate}
+                  >
+                    Generate PO
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-
 
       {/* ─── Add Tax Modal ─── */}
       <Dialog open={!!taxModalItemId} onOpenChange={(open) => { if (!open) { setTaxModalItemId(null); setTaxModalTaxTypeId(""); } }}>
@@ -890,13 +1169,9 @@ export default function NewPurchase() {
             <div>
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Tax Name</Label>
               <Select value={taxModalTaxTypeId} onValueChange={setTaxModalTaxTypeId}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Select tax type" />
-                </SelectTrigger>
+                <SelectTrigger className="bg-background"><SelectValue placeholder="Select tax type" /></SelectTrigger>
                 <SelectContent>
-                  {MOCK_TAX_TYPES.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
+                  {MOCK_TAX_TYPES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -924,13 +1199,9 @@ export default function NewPurchase() {
             <div>
               <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Tax Name</Label>
               <Select value={bulkTaxTypeId} onValueChange={setBulkTaxTypeId}>
-                <SelectTrigger className="bg-background">
-                  <SelectValue placeholder="Select tax type" />
-                </SelectTrigger>
+                <SelectTrigger className="bg-background"><SelectValue placeholder="Select tax type" /></SelectTrigger>
                 <SelectContent>
-                  {MOCK_TAX_TYPES.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
+                  {MOCK_TAX_TYPES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -948,68 +1219,13 @@ export default function NewPurchase() {
         </DialogContent>
       </Dialog>
 
-      {/* ─── Add from Template Modal ─── */}
-      <Dialog open={templateModalOpen} onOpenChange={setTemplateModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add from Template</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Vendor</Label>
-              {selectedVendor ? (
-                <div className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-muted border border-border text-sm">
-                  <span className="font-medium text-foreground">{selectedVendorData?.name}</span>
-                  <span className="text-xs text-muted-foreground ml-1">(pre-filled from PO)</span>
-                </div>
-              ) : (
-                <Select value={templateVendorId} onValueChange={(v) => { setTemplateVendorId(v); setSelectedTemplateId(""); }}>
-                  <SelectTrigger className="bg-background"><SelectValue placeholder="Select vendor" /></SelectTrigger>
-                  <SelectContent>
-                    {MOCK_VENDORS.map((v) => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 block">Template Name</Label>
-              <Select
-                value={selectedTemplateId}
-                onValueChange={setSelectedTemplateId}
-                disabled={!effectiveTemplateVendorId}
-              >
-                <SelectTrigger className="bg-background"><SelectValue placeholder="Select template" /></SelectTrigger>
-                <SelectContent>
-                  {vendorTemplates.length === 0
-                    ? <SelectItem value="_none" disabled>No templates for this vendor</SelectItem>
-                    : vendorTemplates.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)
-                  }
-                </SelectContent>
-              </Select>
-            </div>
-
-            {templateMaterials.length > 0 && (
-              <div className="rounded-md border border-border bg-muted/30 p-3">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Materials in Template</p>
-                <div className="space-y-1.5">
-                  {templateMaterials.map((m) => (
-                    <div key={m.id} className="flex items-center gap-2 text-xs">
-                      <span className="font-mono text-muted-foreground w-14">{m.code}</span>
-                      <span className="flex-1 font-medium">{m.name}</span>
-                      <span className="text-muted-foreground">{m.primaryUnit}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTemplateModalOpen(false)}>Cancel</Button>
-            <Button variant="cento" disabled={!selectedTemplateId} onClick={addFromTemplate}>Add Materials</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* ─── Material Selection Modal ─── */}
+      <MaterialSelectionModal
+        open={materialModalOpen}
+        onClose={() => setMaterialModalOpen(false)}
+        existingMaterialIds={lineItems.map((li) => li.materialId)}
+        onAddMaterials={addMaterialsFromModal}
+      />
     </div>
   );
 }
