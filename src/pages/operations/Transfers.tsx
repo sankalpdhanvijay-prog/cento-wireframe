@@ -7,11 +7,8 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
-} from "@/components/ui/alert-dialog";
 import { useTransferStore, type TransferOrder, type TransferStatus } from "@/context/TransferStoreContext";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 const TAB_KEY: Record<string, TransferStatus> = {
   drafted: "Drafted",
@@ -94,7 +91,7 @@ export default function Transfers() {
                     <TableHead>Created By</TableHead>
                     <TableHead>Created On</TableHead>
                     {key === "approved" && <TableHead>Approved On</TableHead>}
-                    {(key === "drafted") && <TableHead>Last Updated</TableHead>}
+                    {key === "drafted" && <TableHead>Last Updated</TableHead>}
                     {key === "cancelled" && <TableHead>Cancelled Date</TableHead>}
                     {key === "cancelled" && <TableHead>Cancelled By</TableHead>}
                     <TableHead className="w-[48px]" />
@@ -111,7 +108,7 @@ export default function Transfers() {
                     rows.map((row) => (
                       <TableRow
                         key={row.id}
-                        className="cursor-pointer hover:bg-muted/40"
+                        className="cento-row-clickable"
                         onClick={() => navigate(`/operations/transfers/${row.id}`)}
                       >
                         <TableCell className="font-medium text-primary">{row.id}</TableCell>
@@ -144,22 +141,15 @@ export default function Transfers() {
         ))}
       </Tabs>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Transfer Order?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. Transfer <span className="font-semibold">{deleteTarget?.id}</span> will be permanently removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Confirm Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}
+        title="Delete Confirmation"
+        description={`Clicking on Confirm will permanently delete Transfer ${deleteTarget?.id}.`}
+        onConfirm={handleDelete}
+        confirmLabel="Confirm Delete"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }

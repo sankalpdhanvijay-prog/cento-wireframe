@@ -11,6 +11,7 @@ import {
   ArrowLeft, CheckCircle2, XCircle, Package, Pencil, Download, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { usePOStore, type POStatus } from "@/context/POStoreContext";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 const STATUS_COLOR: Record<POStatus, string> = {
   Drafted: "bg-muted text-muted-foreground",
@@ -30,6 +31,7 @@ export default function ViewOrderDetails() {
   const navigate = useNavigate();
   const { getOrder, updateOrderStatus } = usePOStore();
   const [taxBreakdownOpen, setTaxBreakdownOpen] = useState(true);
+  const [confirmAction, setConfirmAction] = useState<{ action: string; title: string; description: string } | null>(null);
 
   const po = id ? getOrder(id) : undefined;
 
@@ -47,7 +49,7 @@ export default function ViewOrderDetails() {
   const showReceivingTotals = po.status === "Partially Received" || po.status === "Closed";
   const showExport = po.status === "Raised" || po.status === "Approved" || po.status === "Cancelled";
 
-  const handleAction = (action: string) => {
+  const executeAction = (action: string) => {
     switch (action) {
       case "edit":
         navigate("/procurements/new-purchase", { state: { editPO: po.id } });
@@ -66,8 +68,22 @@ export default function ViewOrderDetails() {
     }
   };
 
+  const handleAction = (action: string) => {
+    const confirmMap: Record<string, { title: string; description: string }> = {
+      approve: { title: "Approval Confirmation", description: "Clicking on Confirm will Approve the Purchase Order." },
+      cancel: { title: "Cancellation Confirmation", description: "Clicking on Confirm will Cancel the Purchase Order." },
+      receive: { title: "Receive Confirmation", description: "Clicking on Confirm will start receiving for this Purchase Order." },
+      edit: { title: "Edit Confirmation", description: "Clicking on Confirm will open the Purchase Order for editing." },
+    };
+    const conf = confirmMap[action];
+    if (conf) {
+      setConfirmAction({ action, ...conf });
+    } else {
+      executeAction(action);
+    }
+  };
+
   const handleExport = () => {
-    // Placeholder export
     const blob = new Blob([`PO Details: ${po.id}\nVendor: ${po.vendor}\nTotal: ${fmt(po.grandTotal)}`], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -77,18 +93,14 @@ export default function ViewOrderDetails() {
     URL.revokeObjectURL(url);
   };
 
-  // Tax breakdown from stored data or compute from materials
   const taxBreakdown = po.taxBreakdown ?? (() => {
     const bd: Record<string, number> = {};
-    if (po.totalTax > 0) {
-      bd["Tax"] = po.totalTax;
-    }
+    if (po.totalTax > 0) bd["Tax"] = po.totalTax;
     return bd;
   })();
 
   return (
     <div className="space-y-5 max-w-[1000px] pb-28">
-      {/* Header row: Back + Export */}
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
@@ -105,20 +117,16 @@ export default function ViewOrderDetails() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold">PO Details</CardTitle>
-            <Badge variant="outline" className={`text-xs px-3 py-1 ${STATUS_COLOR[po.status]}`}>
-              {po.status}
-            </Badge>
+            <Badge variant="outline" className={`text-xs px-3 py-1 ${STATUS_COLOR[po.status]}`}>{po.status}</Badge>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Upper row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4 mb-4">
             <DetailField label="PO ID" value={po.id} highlight />
             <DetailField label="Buying Outlet" value={po.outlet} />
             <DetailField label="Supplier Type" value={po.supplierType || "Vendor"} />
             <DetailField label={po.supplierType === "Outlet" ? "Supplying Outlet" : "Vendor"} value={po.vendor} />
           </div>
-          {/* Lower row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
             <DetailField label="Created By" value={po.createdBy} />
             <DetailField label="Created On" value={po.createdOn} />
@@ -177,8 +185,6 @@ export default function ViewOrderDetails() {
         <CardContent>
           <div className="space-y-2.5">
             <SummaryRow label="PO Subtotal" value={fmt(po.poSubtotal)} />
-
-            {/* Total Tax - expandable breakdown */}
             <div>
               <div className="flex items-center justify-between">
                 <button
@@ -203,15 +209,9 @@ export default function ViewOrderDetails() {
                 </div>
               )}
             </div>
-
-            {/* Other Charges if any */}
-            {(po.otherCharges ?? 0) > 0 && (
-              <SummaryRow label="Other Charges" value={fmt(po.otherCharges!)} />
-            )}
-
+            {(po.otherCharges ?? 0) > 0 && <SummaryRow label="Other Charges" value={fmt(po.otherCharges!)} />}
             <Separator />
             <SummaryRow label="Grand Total" value={fmt(po.grandTotal)} bold />
-
             {showReceivingTotals && (
               <>
                 <div className="h-3" />
@@ -262,6 +262,16 @@ export default function ViewOrderDetails() {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        open={!!confirmAction}
+        onOpenChange={() => setConfirmAction(null)}
+        title={confirmAction?.title ?? ""}
+        description={confirmAction?.description ?? ""}
+        onConfirm={() => { if (confirmAction) executeAction(confirmAction.action); setConfirmAction(null); }}
+        confirmLabel="Confirm"
+        confirmVariant={confirmAction?.action === "cancel" ? "destructive" : "default"}
+      />
     </div>
   );
 }

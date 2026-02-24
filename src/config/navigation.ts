@@ -104,7 +104,7 @@ export const settingsModule: NavModule = {
 
 export const settingsSubModules = [
   { title: "Outlet Management", path: "/settings/outlets" },
-  { title: "Purchase Management", path: "/settings/purchase-management" },
+  { title: "Material Management", path: "/settings/material-management" },
   { title: "POS Sync Configs", path: "/settings/pos-sync" },
   { title: "Unit Management", path: "/settings/units" },
   { title: "Tax Management", path: "/settings/tax" },

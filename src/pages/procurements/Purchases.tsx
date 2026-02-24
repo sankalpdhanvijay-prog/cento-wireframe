@@ -7,13 +7,10 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { usePOStore, type PurchaseOrder, type POStatus } from "@/context/POStoreContext";
 import { cn } from "@/lib/utils";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 const TAB_KEY: Record<string, POStatus> = {
   drafted: "Drafted",
@@ -25,7 +22,6 @@ const TAB_KEY: Record<string, POStatus> = {
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
-// Mock templates data
 const MOCK_PO_TEMPLATES = [
   { id: "tpl1", name: "Weekly Staples", supplierType: "Vendor" as const, createdBy: "Admin", createdAt: "2026-01-15", materialIds: ["m1", "m4", "m8"] },
   { id: "tpl2", name: "Dairy Restock", supplierType: "Vendor" as const, createdBy: "Meera", createdAt: "2026-01-20", materialIds: ["m7"] },
@@ -159,7 +155,7 @@ export default function Purchases() {
     switch (tab) {
       case "drafted":
         return (
-          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
             <TableCell>{supplierBadge}</TableCell>
             <TableCell>{row.vendor}</TableCell>
@@ -174,7 +170,7 @@ export default function Purchases() {
         );
       case "raised":
         return (
-          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
             <TableCell>{supplierBadge}</TableCell>
             <TableCell>{row.vendor}</TableCell>
@@ -188,7 +184,7 @@ export default function Purchases() {
         );
       case "approved":
         return (
-          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
             <TableCell>{supplierBadge}</TableCell>
             <TableCell>{row.vendor}</TableCell>
@@ -203,7 +199,7 @@ export default function Purchases() {
         );
       case "cancelled":
         return (
-          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
             <TableCell>{supplierBadge}</TableCell>
             <TableCell>{row.vendor}</TableCell>
@@ -228,7 +224,6 @@ export default function Purchases() {
         </Button>
       </div>
 
-      {/* Tabs row with separate Templates tab */}
       <div className="flex items-center gap-3">
         <Tabs value={showTemplates ? "" : tab} onValueChange={(v) => { setTab(v); setShowTemplates(false); }} className="flex-1">
           <div className="flex items-center gap-3">
@@ -239,7 +234,6 @@ export default function Purchases() {
               <TabsTrigger value="cancelled" className="text-xs px-3 py-1.5">Cancelled</TabsTrigger>
             </TabsList>
 
-            {/* Templates button - visually separated */}
             <button
               onClick={() => setShowTemplates(true)}
               className={cn(
@@ -294,7 +288,6 @@ export default function Purchases() {
         </Tabs>
       </div>
 
-      {/* Templates View */}
       {showTemplates && (
         <div className="cento-card p-0 overflow-hidden mt-1">
           <Table>
@@ -337,22 +330,15 @@ export default function Purchases() {
         </div>
       )}
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete PO?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. PO <span className="font-semibold">{deleteTarget?.id}</span> will be permanently removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Confirm Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}
+        title="Delete Confirmation"
+        description={`Clicking on Confirm will permanently delete PO ${deleteTarget?.id}.`}
+        onConfirm={handleDelete}
+        confirmLabel="Confirm Delete"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ArrowLeft, CheckCircle2, XCircle, Pencil, Download } from "lucide-react";
 import { useTransferStore, type TransferStatus } from "@/context/TransferStoreContext";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 const STATUS_COLOR: Record<TransferStatus, string> = {
   Drafted: "bg-muted text-muted-foreground",
@@ -20,6 +22,7 @@ export default function ViewTransferDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getTransfer, updateTransferStatus } = useTransferStore();
+  const [confirmAction, setConfirmAction] = useState<{ action: string; title: string; description: string } | null>(null);
 
   const to = id ? getTransfer(id) : undefined;
 
@@ -36,27 +39,29 @@ export default function ViewTransferDetails() {
 
   const showExport = to.status === "Raised" || to.status === "Approved" || to.status === "Cancelled";
 
-  const handleAction = (action: string) => {
+  const executeAction = (action: string) => {
     switch (action) {
-      case "edit":
-        navigate("/operations/transfers/new-transfer", { state: { editTO: to.id } });
-        break;
-      case "approve":
-        updateTransferStatus(to.id, "Approved");
-        navigate("/operations/transfers", { state: { tab: "approved" } });
-        break;
-      case "cancel":
-        updateTransferStatus(to.id, "Cancelled");
-        navigate("/operations/transfers", { state: { tab: "cancelled" } });
-        break;
+      case "edit": navigate("/operations/transfers/new-transfer", { state: { editTO: to.id } }); break;
+      case "approve": updateTransferStatus(to.id, "Approved"); navigate("/operations/transfers", { state: { tab: "approved" } }); break;
+      case "cancel": updateTransferStatus(to.id, "Cancelled"); navigate("/operations/transfers", { state: { tab: "cancelled" } }); break;
     }
+  };
+
+  const handleAction = (action: string) => {
+    const confirmMap: Record<string, { title: string; description: string }> = {
+      approve: { title: "Approval Confirmation", description: "Clicking on Confirm will Approve the Transfer Order." },
+      cancel: { title: "Cancellation Confirmation", description: "Clicking on Confirm will Cancel the Transfer Order." },
+      edit: { title: "Edit Confirmation", description: "Clicking on Confirm will open the Transfer Order for editing." },
+    };
+    const conf = confirmMap[action];
+    if (conf) setConfirmAction({ action, ...conf });
+    else executeAction(action);
   };
 
   const handleExport = () => {
     const blob = new Blob([`Transfer Details: ${to.id}\nSender: ${to.senderOutlet}\nTotal: ${fmt(to.grandTotal)}`], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `${to.id}-details.txt`; a.click();
+    const a = document.createElement("a"); a.href = url; a.download = `${to.id}-details.txt`; a.click();
     URL.revokeObjectURL(url);
   };
 
@@ -100,9 +105,7 @@ export default function ViewTransferDetails() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold">Materials Details</CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Materials Details</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -128,9 +131,7 @@ export default function ViewTransferDetails() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base font-semibold">Transfer Summary</CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Transfer Summary</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-2.5">
             <SummaryRow label="Subtotal" value={fmt(to.subtotal)} />
@@ -159,6 +160,16 @@ export default function ViewTransferDetails() {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        open={!!confirmAction}
+        onOpenChange={() => setConfirmAction(null)}
+        title={confirmAction?.title ?? ""}
+        description={confirmAction?.description ?? ""}
+        onConfirm={() => { if (confirmAction) executeAction(confirmAction.action); setConfirmAction(null); }}
+        confirmLabel="Confirm"
+        confirmVariant={confirmAction?.action === "cancel" ? "destructive" : "default"}
+      />
     </div>
   );
 }

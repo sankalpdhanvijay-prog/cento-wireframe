@@ -7,10 +7,7 @@ import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 interface GRNRow {
   id: string;
@@ -47,8 +44,6 @@ const TAB_KEY: Record<string, GRNRow["status"]> = {
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
-
-let mockGRNs = [...MOCK_GRNS];
 
 export default function Receivings() {
   const navigate = useNavigate();
@@ -158,7 +153,7 @@ export default function Receivings() {
     switch (tab) {
       case "partial":
         return (
-          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.grnId}</TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
@@ -174,7 +169,7 @@ export default function Receivings() {
         );
       case "received":
         return (
-          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.grnId}</TableCell>
             <TableCell>{typeBadge}</TableCell>
             <TableCell className="text-muted-foreground">{row.poId ?? "—"}</TableCell>
@@ -192,7 +187,7 @@ export default function Receivings() {
       case "drafted":
       case "cancelled":
         return (
-          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
             <TableCell className="font-medium text-primary">{row.grnId}</TableCell>
             <TableCell>{typeBadge}</TableCell>
             <TableCell className="text-muted-foreground">{row.poId ?? "—"}</TableCell>
@@ -262,22 +257,15 @@ export default function Receivings() {
         ))}
       </Tabs>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Draft Receiving?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. GRN <span className="font-semibold">{deleteTarget?.grnId}</span> will be permanently removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Confirm Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}
+        title="Delete Confirmation"
+        description={`Clicking on Confirm will permanently delete GRN ${deleteTarget?.grnId}.`}
+        onConfirm={handleDelete}
+        confirmLabel="Confirm Delete"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }
