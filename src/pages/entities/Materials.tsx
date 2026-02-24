@@ -49,8 +49,8 @@ export default function Materials() {
           <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input placeholder="Search materials..." className="pl-8 h-9 text-xs bg-card" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <Button variant="cento" onClick={() => navigate("/settings", { state: { section: "/settings/material-management" } })}>
-          <Plus className="h-4 w-4" /> Add Material
+        <Button variant="cento" onClick={() => navigate("/settings", { state: { section: "/settings/material-management", scrollToEdit: true } })}>
+          <Plus className="h-4 w-4" /> Add/Edit Material
         </Button>
       </div>
 
@@ -65,6 +65,7 @@ export default function Materials() {
         </Select>
       </div>
 
+      <h3 className="text-sm font-semibold text-foreground mb-2">All Materials</h3>
       <div className="cento-card p-0 overflow-hidden">
         <Table>
           <TableHeader>
