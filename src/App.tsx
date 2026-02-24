@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { POStoreProvider } from "@/context/POStoreContext";
+import { TransferStoreProvider } from "@/context/TransferStoreContext";
+import { DispatchStoreProvider } from "@/context/DispatchStoreContext";
+import { ProductionStoreProvider } from "@/context/ProductionStoreContext";
 import NotFound from "./pages/NotFound";
 
 // Pages
@@ -22,9 +25,17 @@ import ViewReceiving from "./pages/procurements/receiving/ViewReceiving";
 import ViewReceivingDetail from "./pages/procurements/receivings/ViewReceivingDetail";
 import AllOrders from "./pages/procurements/AllOrders";
 import ViewOrderDetails from "./pages/procurements/orders/ViewOrderDetails";
-import DispatchManagement from "./pages/operations/DispatchManagement";
-import ProductionManagement from "./pages/operations/ProductionManagement";
-import TransferManagement from "./pages/operations/TransferManagement";
+
+// Operations
+import Dispatches from "./pages/operations/Dispatches";
+import ViewDispatchDetails, { NewDispatch } from "./pages/operations/DispatchPages";
+import Transfers from "./pages/operations/Transfers";
+import NewTransfer from "./pages/operations/NewTransfer";
+import ViewTransferDetails from "./pages/operations/ViewTransferDetails";
+import Productions from "./pages/operations/Productions";
+import NewProduction from "./pages/operations/NewProduction";
+import ViewProductionDetails from "./pages/operations/ViewProductionDetails";
+
 import Inventory from "./pages/Inventory";
 import Materials from "./pages/entities/Materials";
 import Recipes from "./pages/entities/Recipes";
@@ -39,58 +50,71 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <POStoreProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/reports" element={<Reports />} />
+        <TransferStoreProvider>
+          <DispatchStoreProvider>
+            <ProductionStoreProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route element={<AppLayout />}>
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/reports" element={<Reports />} />
 
-              {/* Procurements */}
-              <Route path="/procurements" element={<Navigate to="/procurements/purchases" replace />} />
-              <Route path="/procurements/purchases" element={<Purchases />} />
-              <Route path="/procurements/purchases/:id" element={<ViewOrderDetails />} />
-              <Route path="/procurements/new-purchase" element={<NewPurchase />} />
-              <Route path="/procurements/receivings" element={<Receivings />} />
-              <Route path="/procurements/receivings/:id" element={<ViewReceivingDetail />} />
-              <Route path="/procurements/closed-orders" element={<ClosedOrders />} />
-              <Route path="/procurements/closed-orders/:id" element={<ViewReceivingDetail />} />
+                    {/* Procurements */}
+                    <Route path="/procurements" element={<Navigate to="/procurements/purchases" replace />} />
+                    <Route path="/procurements/purchases" element={<Purchases />} />
+                    <Route path="/procurements/purchases/:id" element={<ViewOrderDetails />} />
+                    <Route path="/procurements/new-purchase" element={<NewPurchase />} />
+                    <Route path="/procurements/receivings" element={<Receivings />} />
+                    <Route path="/procurements/receivings/:id" element={<ViewReceivingDetail />} />
+                    <Route path="/procurements/closed-orders" element={<ClosedOrders />} />
+                    <Route path="/procurements/closed-orders/:id" element={<ViewReceivingDetail />} />
 
-              {/* Legacy receiving flow routes */}
-              <Route path="/procurements/new-receiving" element={<Navigate to="/procurements/receivings" replace />} />
-              <Route path="/procurements/new-receiving/create" element={<CreateReceivingTypeSelect />} />
-              <Route path="/procurements/new-receiving/po" element={<POBasedReceiving />} />
-              <Route path="/procurements/new-receiving/direct" element={<DirectReceiving />} />
-              <Route path="/procurements/new-receiving/view/:id" element={<ViewReceiving />} />
-              <Route path="/procurements/new-receiving/edit/:id" element={<POBasedReceiving />} />
+                    {/* Legacy receiving flow routes */}
+                    <Route path="/procurements/new-receiving" element={<Navigate to="/procurements/receivings" replace />} />
+                    <Route path="/procurements/new-receiving/create" element={<CreateReceivingTypeSelect />} />
+                    <Route path="/procurements/new-receiving/po" element={<POBasedReceiving />} />
+                    <Route path="/procurements/new-receiving/direct" element={<DirectReceiving />} />
+                    <Route path="/procurements/new-receiving/view/:id" element={<ViewReceiving />} />
+                    <Route path="/procurements/new-receiving/edit/:id" element={<POBasedReceiving />} />
 
-              {/* Legacy all-orders redirect */}
-              <Route path="/procurements/all-orders" element={<Navigate to="/procurements/closed-orders" replace />} />
-              <Route path="/procurements/all-orders/:id" element={<ViewOrderDetails />} />
+                    {/* Legacy all-orders redirect */}
+                    <Route path="/procurements/all-orders" element={<Navigate to="/procurements/closed-orders" replace />} />
+                    <Route path="/procurements/all-orders/:id" element={<ViewOrderDetails />} />
 
-              <Route path="/operations" element={<Navigate to="/operations/dispatches" replace />} />
-              <Route path="/operations/dispatches" element={<DispatchManagement />} />
-              <Route path="/operations/productions" element={<ProductionManagement />} />
-              <Route path="/operations/transfers" element={<TransferManagement />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/entities" element={<Navigate to="/entities/materials" replace />} />
-              <Route path="/entities/materials" element={<Materials />} />
-              <Route path="/entities/recipes" element={<Recipes />} />
-              <Route path="/entities/vendors" element={<Vendors />} />
-              <Route path="/audits" element={<Audits />} />
-              <Route path="/wastage" element={<Wastage />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/settings/*" element={<Settings />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+                    {/* Operations */}
+                    <Route path="/operations" element={<Navigate to="/operations/dispatches" replace />} />
+                    <Route path="/operations/dispatches" element={<Dispatches />} />
+                    <Route path="/operations/dispatches/new-dispatch" element={<NewDispatch />} />
+                    <Route path="/operations/dispatches/:id" element={<ViewDispatchDetails />} />
+                    <Route path="/operations/transfers" element={<Transfers />} />
+                    <Route path="/operations/transfers/new-transfer" element={<NewTransfer />} />
+                    <Route path="/operations/transfers/:id" element={<ViewTransferDetails />} />
+                    <Route path="/operations/productions" element={<Productions />} />
+                    <Route path="/operations/productions/new-production" element={<NewProduction />} />
+                    <Route path="/operations/productions/:id" element={<ViewProductionDetails />} />
+
+                    <Route path="/inventory" element={<Inventory />} />
+                    <Route path="/entities" element={<Navigate to="/entities/materials" replace />} />
+                    <Route path="/entities/materials" element={<Materials />} />
+                    <Route path="/entities/recipes" element={<Recipes />} />
+                    <Route path="/entities/vendors" element={<Vendors />} />
+                    <Route path="/audits" element={<Audits />} />
+                    <Route path="/wastage" element={<Wastage />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/settings/*" element={<Settings />} />
+                  </Route>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </ProductionStoreProvider>
+          </DispatchStoreProvider>
+        </TransferStoreProvider>
       </POStoreProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
-
