@@ -1,12 +1,12 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ArrowLeft, CheckCircle2, XCircle, Pencil, Lock } from "lucide-react";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 // Reuse the same mock structure as Receivings.tsx for detail lookup
 interface GRNMaterial {
@@ -209,6 +209,7 @@ export default function ViewReceivingDetail() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isClosedOrder = pathname.startsWith("/procurements/closed-orders");
+  const [confirmAction, setConfirmAction] = useState<{ action: string; title: string; description: string } | null>(null);
 
   const grn = MOCK_GRN_DETAILS.find((g) => g.id === id);
 
@@ -226,6 +227,25 @@ export default function ViewReceivingDetail() {
   const isPartial = grn.status === "Partially Received";
   const shortItems = grn.materials.filter((m) => m.shortReason);
   const excessItems = grn.materials.filter((m) => m.excessReason);
+
+  const executeAction = (action: string) => {
+    switch (action) {
+      case "cancel": navigate("/procurements/receivings", { state: { tab: "cancelled" } }); break;
+      case "edit": navigate(grn.receivingType === "PO-Based" ? "/procurements/new-receiving/po" : "/procurements/new-receiving/direct"); break;
+      case "close": navigate("/procurements/receivings", { state: { tab: "received" } }); break;
+    }
+  };
+
+  const handleAction = (action: string) => {
+    const confirmMap: Record<string, { title: string; description: string }> = {
+      cancel: { title: "Cancellation Confirmation", description: "Clicking on Confirm will Cancel this Receiving." },
+      edit: { title: "Edit Confirmation", description: "Clicking on Confirm will open this Receiving for editing." },
+      close: { title: "Close Confirmation", description: "Clicking on Confirm will Close & Update Stock for this Receiving." },
+    };
+    const conf = confirmMap[action];
+    if (conf) setConfirmAction({ action, ...conf });
+    else executeAction(action);
+  };
 
   return (
     <div className="space-y-5 max-w-[1000px] pb-28">
@@ -372,20 +392,20 @@ export default function ViewReceivingDetail() {
           <div className="max-w-[1000px] mx-auto flex items-center justify-end gap-3 px-6 py-3">
             {grn.status === "Drafted" && (
               <>
-                <Button variant="destructive" size="sm" onClick={() => navigate("/procurements/receivings", { state: { tab: "cancelled" } })}>
+                <Button variant="destructive" size="sm" onClick={() => handleAction("cancel")}>
                   <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate(grn.receivingType === "PO-Based" ? "/procurements/new-receiving/po" : "/procurements/new-receiving/direct")}>
+                <Button variant="outline" size="sm" onClick={() => handleAction("edit")}>
                   <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
                 </Button>
               </>
             )}
             {(grn.status === "Received" || grn.status === "Partially Received") && (
               <>
-                <Button variant="destructive" size="sm" onClick={() => navigate("/procurements/receivings", { state: { tab: "cancelled" } })}>
+                <Button variant="destructive" size="sm" onClick={() => handleAction("cancel")}>
                   <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel
                 </Button>
-                <Button variant="cento" size="sm" onClick={() => navigate("/procurements/receivings", { state: { tab: "received" } })}>
+                <Button variant="cento" size="sm" onClick={() => handleAction("close")}>
                   <Lock className="h-3.5 w-3.5 mr-1" /> Close &amp; Update Stock
                 </Button>
               </>
@@ -393,6 +413,16 @@ export default function ViewReceivingDetail() {
           </div>
         </div>
       )}
+
+      <ConfirmationModal
+        open={!!confirmAction}
+        onOpenChange={() => setConfirmAction(null)}
+        title={confirmAction?.title ?? ""}
+        description={confirmAction?.description ?? ""}
+        onConfirm={() => { if (confirmAction) executeAction(confirmAction.action); setConfirmAction(null); }}
+        confirmLabel="Confirm"
+        confirmVariant={confirmAction?.action === "cancel" ? "destructive" : "default"}
+      />
     </div>
   );
 }

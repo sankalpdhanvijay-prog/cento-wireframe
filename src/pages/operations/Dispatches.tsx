@@ -2,19 +2,22 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useDispatchStore } from "@/context/DispatchStoreContext";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { toast } from "@/hooks/use-toast";
 
 const fmt = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
 export default function Dispatches() {
   const navigate = useNavigate();
-  const { newDispatches, dispatches, deleteDispatch } = useDispatchStore();
+  const { newDispatches, dispatches, updateDispatchStatus } = useDispatchStore();
   const [activeTab, setActiveTab] = useState<"new" | "all" | "deleted">("new");
   const [search, setSearch] = useState("");
+  const [closeTarget, setCloseTarget] = useState<string | null>(null);
 
   const allDispatches = useMemo(() => dispatches.filter((d) => d.status !== "Deleted"), [dispatches]);
   const deletedDispatches = useMemo(() => dispatches.filter((d) => d.status === "Deleted"), [dispatches]);
@@ -36,6 +39,14 @@ export default function Dispatches() {
     const q = search.toLowerCase();
     return deletedDispatches.filter((d) => d.id.toLowerCase().includes(q) || d.requisitionId.toLowerCase().includes(q));
   }, [deletedDispatches, search]);
+
+  const handleCloseDispatch = () => {
+    if (closeTarget) {
+      updateDispatchStatus(closeTarget, "Closed");
+      toast({ title: "Dispatch Closed", description: `${closeTarget} has been closed.` });
+    }
+    setCloseTarget(null);
+  };
 
   return (
     <div className="space-y-4 max-w-[1200px]">
@@ -69,25 +80,23 @@ export default function Dispatches() {
                 <TableHead>Requisition Date</TableHead>
                 <TableHead>Expected Delivery</TableHead>
                 <TableHead>Last Updated</TableHead>
-                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredNew.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No new dispatches pending.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No new dispatches pending.</TableCell></TableRow>
               ) : filteredNew.map((d) => (
-                <TableRow key={d.requisitionId}>
+                <TableRow
+                  key={d.requisitionId}
+                  className="cento-row-clickable"
+                  onClick={() => navigate(`/operations/dispatches/new-dispatch`, { state: { requisitionId: d.requisitionId, type: d.type } })}
+                >
                   <TableCell className="font-medium text-primary">{d.requisitionId}</TableCell>
                   <TableCell>{d.raisedBy}</TableCell>
                   <TableCell className="text-right font-medium">{fmt(d.totalValue)}</TableCell>
                   <TableCell className="text-muted-foreground">{d.requisitionDate}</TableCell>
                   <TableCell className="text-muted-foreground">{d.expectedDeliveryDate}</TableCell>
                   <TableCell className="text-muted-foreground">{d.lastUpdated}</TableCell>
-                  <TableCell>
-                    <Button variant="cento" size="sm" className="h-7 text-xs px-3" onClick={() => navigate(`/operations/dispatches/new-dispatch`, { state: { requisitionId: d.requisitionId, type: d.type } })}>
-                      Dispatch
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -108,14 +117,23 @@ export default function Dispatches() {
                 <TableHead>Invoice ID</TableHead>
                 <TableHead className="text-right">Invoice Amount</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAll.length === 0 ? (
-                <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">No dispatches found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">No dispatches found.</TableCell></TableRow>
               ) : filteredAll.map((d) => (
-                <TableRow key={d.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/operations/dispatches/${d.id}`)}>
+                <TableRow
+                  key={d.id}
+                  className="cento-row-clickable"
+                  onClick={() => {
+                    if (d.status === "In Transit") {
+                      setCloseTarget(d.id);
+                    } else {
+                      navigate(`/operations/dispatches/${d.id}`);
+                    }
+                  }}
+                >
                   <TableCell className="font-medium text-primary">{d.id}</TableCell>
                   <TableCell className="text-muted-foreground">{d.dispatchDate}</TableCell>
                   <TableCell>{d.deliverTo}</TableCell>
@@ -127,13 +145,6 @@ export default function Dispatches() {
                     <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", d.status === "Closed" ? "border-green-200 text-green-700 bg-green-50" : "border-amber-200 text-amber-700 bg-amber-50")}>
                       {d.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    {d.status === "In Transit" ? (
-                      <Button variant="cento" size="sm" className="h-7 text-xs px-3" onClick={() => navigate(`/operations/dispatches/${d.id}`)}>Close</Button>
-                    ) : (
-                      <Button variant="outline" size="sm" className="h-7 text-xs px-3" onClick={() => navigate(`/operations/dispatches/${d.id}`)}>View</Button>
-                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -158,7 +169,7 @@ export default function Dispatches() {
               {filteredDeleted.length === 0 ? (
                 <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground">No deleted dispatches.</TableCell></TableRow>
               ) : filteredDeleted.map((d) => (
-                <TableRow key={d.id}>
+                <TableRow key={d.id} className="cento-row-clickable" onClick={() => navigate(`/operations/dispatches/${d.id}`)}>
                   <TableCell className="font-medium">{d.id}</TableCell>
                   <TableCell className="text-muted-foreground">{d.dispatchDate}</TableCell>
                   <TableCell>{d.deliverTo}</TableCell>
@@ -170,6 +181,15 @@ export default function Dispatches() {
           </Table>
         </div>
       )}
+
+      <ConfirmationModal
+        open={!!closeTarget}
+        onOpenChange={() => setCloseTarget(null)}
+        title="Close Dispatch Confirmation"
+        description="Clicking on Confirm will close this dispatch and mark it as completed."
+        onConfirm={handleCloseDispatch}
+        confirmLabel="Confirm"
+      />
     </div>
   );
 }

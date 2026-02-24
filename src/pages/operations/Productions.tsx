@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useProductionStore, type Production } from "@/context/ProductionStoreContext";
+import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 export default function Productions() {
   const navigate = useNavigate();
@@ -66,7 +66,7 @@ export default function Productions() {
             {filtered.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No productions found.</TableCell></TableRow>
             ) : filtered.map((p) => (
-              <TableRow key={p.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/operations/productions/${p.id}`)}>
+              <TableRow key={p.id} className="cento-row-clickable" onClick={() => navigate(`/operations/productions/${p.id}`)}>
                 <TableCell className="font-medium text-primary">{p.id}</TableCell>
                 <TableCell className="font-medium">{p.productionPlan}</TableCell>
                 <TableCell className="text-muted-foreground">{p.productionDate}</TableCell>
@@ -87,18 +87,15 @@ export default function Productions() {
         </Table>
       </div>
 
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Production?</AlertDialogTitle>
-            <AlertDialogDescription>Production <span className="font-semibold">{deleteTarget?.id}</span> will be moved to deleted.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Confirm Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}
+        title="Delete Confirmation"
+        description={`Clicking on Confirm will delete Production ${deleteTarget?.id}.`}
+        onConfirm={handleDelete}
+        confirmLabel="Confirm Delete"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }

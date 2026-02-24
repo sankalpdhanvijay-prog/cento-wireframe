@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -91,7 +90,7 @@ export default function ClosedOrders() {
               rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="cursor-pointer hover:bg-muted/40"
+                  className="cento-row-clickable"
                   onClick={() => navigate(`/procurements/closed-orders/${row.id}`)}
                 >
                   <TableCell className="font-medium text-primary">{row.poId}</TableCell>
