@@ -14,7 +14,7 @@ const MOCK_W_TEMPLATES = [
 
 interface WastageEntry {
   id: string; createdBy: string; createdOn: string; referenceId: string; wastageAmount: number;
-  status: "Draft" | "InReview" | "Closed";
+  status: "Draft" | "InReview" | "Closed" | "Rejected";
   materials: { code: string; name: string; category: string; wastageQty: number; wastageCategory: string; batch: string }[];
 }
 
@@ -42,7 +42,7 @@ const fmt = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", c
 export default function Wastage() {
   const navigate = useNavigate();
   const [mainTab, setMainTab] = useState<"templates" | "status">("status");
-  const [statusTab, setStatusTab] = useState<"Draft" | "InReview" | "Closed">("Draft");
+  const [statusTab, setStatusTab] = useState<"Draft" | "InReview" | "Rejected" | "Closed">("Draft");
   const [search, setSearch] = useState("");
 
   const filteredTemplates = useMemo(() => {
@@ -73,7 +73,7 @@ export default function Wastage() {
           Templates
         </button>
         <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/40">
-          {(["Draft", "InReview", "Closed"] as const).map((s) => (
+          {(["Draft", "InReview", "Rejected", "Closed"] as const).map((s) => (
             <button key={s} onClick={() => { setMainTab("status"); setStatusTab(s); }} className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", mainTab === "status" && statusTab === s ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}>
               {s === "InReview" ? "In Review" : s}
             </button>
@@ -122,11 +122,12 @@ export default function Wastage() {
                 <TableHead>Reference ID</TableHead>
                 <TableHead className="text-right">Wastage Amount</TableHead>
                 {statusTab === "InReview" && <TableHead>Status</TableHead>}
+                {statusTab === "Rejected" && <TableHead>Status</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredWastages.length === 0 ? (
-                <TableRow><TableCell colSpan={statusTab === "InReview" ? 6 : 5} className="text-center py-12 text-muted-foreground">No wastages found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={statusTab === "InReview" || statusTab === "Rejected" ? 6 : 5} className="text-center py-12 text-muted-foreground">No wastages found.</TableCell></TableRow>
               ) : filteredWastages.map((w) => (
                 <TableRow
                   key={w.id}
@@ -141,6 +142,11 @@ export default function Wastage() {
                   {statusTab === "InReview" && (
                     <TableCell>
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-200 text-amber-700 bg-amber-50">In Review</Badge>
+                    </TableCell>
+                  )}
+                  {statusTab === "Rejected" && (
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-red-200 text-red-600 bg-red-50">Rejected</Badge>
                     </TableCell>
                   )}
                 </TableRow>

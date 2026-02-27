@@ -16,7 +16,7 @@ interface WastageMaterial {
 
 interface WastageEntry {
   id: string; createdBy: string; createdOn: string; referenceId: string; wastageAmount: number;
-  status: "Draft" | "InReview" | "Closed"; materials: WastageMaterial[];
+  status: "Draft" | "InReview" | "Closed" | "Rejected"; materials: WastageMaterial[];
 }
 
 export default function WastageDetails() {
@@ -42,7 +42,11 @@ export default function WastageDetails() {
       log: "Wastage logged.", approve: "Wastage approved.", reject: "Wastage rejected.",
     };
     toast({ title: "Success", description: msgs[confirmAction!] ?? "" });
-    navigate("/wastage");
+    if (confirmAction === "reject") {
+      navigate("/wastage", { state: { tab: "Rejected" } });
+    } else {
+      navigate("/wastage");
+    }
     setConfirmAction(null);
   };
 
@@ -64,6 +68,7 @@ export default function WastageDetails() {
           {status === "Draft" && "Edit and update this draft wastage."}
           {status === "InReview" && "Review and approve this wastage."}
           {status === "Closed" && "View closed wastage details."}
+          {status === "Rejected" && "View rejected wastage details."}
         </p>
       </div>
 
@@ -134,7 +139,7 @@ export default function WastageDetails() {
             </div>
           </div>
         )}
-        {/* Closed: no CTAs */}
+        {/* Closed & Rejected: no CTAs */}
       </div>
 
       {(["draft", "template", "log", "approve", "reject"] as const).map((action) => (

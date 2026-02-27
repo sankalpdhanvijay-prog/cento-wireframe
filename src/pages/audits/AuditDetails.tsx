@@ -12,7 +12,7 @@ interface AuditMaterial {
 }
 
 interface AuditEntry {
-  id: string; createdBy: string; createdOn: string; status: "Draft" | "InReview" | "Closed";
+  id: string; createdBy: string; createdOn: string; status: "Draft" | "InReview" | "Closed" | "Rejected";
   materials: AuditMaterial[];
 }
 
@@ -40,7 +40,11 @@ export default function AuditDetails() {
       update: "Inventory updated.", reject: "Audit rejected.", approve: "Audit approved.", close: "Audit closed.",
     };
     toast({ title: "Success", description: msgs[confirmAction!] ?? "" });
-    navigate("/audits");
+    if (confirmAction === "reject") {
+      navigate("/audits", { state: { tab: "Rejected" } });
+    } else {
+      navigate("/audits");
+    }
     setConfirmAction(null);
   };
 
@@ -62,6 +66,7 @@ export default function AuditDetails() {
           {status === "Draft" && "Edit and update this draft audit."}
           {status === "InReview" && "Review and approve this audit."}
           {status === "Closed" && "View closed audit details."}
+          {status === "Rejected" && "View rejected audit details."}
         </p>
       </div>
 
@@ -99,6 +104,12 @@ export default function AuditDetails() {
                   <TableHead>Batch Name</TableHead>
                   <TableHead>Reason</TableHead>
                 </>)}
+                {status === "Rejected" && (<>
+                  <TableHead className="text-right">Cost Variance</TableHead>
+                  <TableHead className="text-right">Count Variance</TableHead>
+                  <TableHead>Batch Name</TableHead>
+                  <TableHead>Reason</TableHead>
+                </>)}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -110,7 +121,11 @@ export default function AuditDetails() {
                   <TableCell className="font-medium">{m.name}</TableCell>
                   <TableCell className="text-muted-foreground">{m.category}</TableCell>
                   <TableCell className="text-right">{m.systemStock}</TableCell>
-                  <TableCell className="text-right">{m.actualStock}</TableCell>
+                  <TableCell className="text-right">
+                    {status === "Draft" ? (
+                      <Input type="number" className="h-8 w-20 text-xs text-right ml-auto" defaultValue={m.actualStock} />
+                    ) : m.actualStock}
+                  </TableCell>
                   {status === "Draft" && (<>
                     <TableCell className="text-right">{m.variance}</TableCell>
                     <TableCell className="text-right">{m.percentVariance.toFixed(2)}%</TableCell>
@@ -124,6 +139,12 @@ export default function AuditDetails() {
                     <TableCell className="text-muted-foreground">{m.reason}</TableCell>
                   </>)}
                   {status === "Closed" && (<>
+                    <TableCell className="text-right">{m.costVariance ?? "—"}</TableCell>
+                    <TableCell className="text-right">{m.countVariance ?? m.variance}</TableCell>
+                    <TableCell className="text-muted-foreground">{m.batchName}</TableCell>
+                    <TableCell className="text-muted-foreground">{m.reason}</TableCell>
+                  </>)}
+                  {status === "Rejected" && (<>
                     <TableCell className="text-right">{m.costVariance ?? "—"}</TableCell>
                     <TableCell className="text-right">{m.countVariance ?? m.variance}</TableCell>
                     <TableCell className="text-muted-foreground">{m.batchName}</TableCell>
@@ -154,7 +175,7 @@ export default function AuditDetails() {
             </div>
           </div>
         )}
-        {/* Closed: no CTAs */}
+        {/* Closed & Rejected: no CTAs */}
       </div>
 
       {(["draft", "template", "update", "reject", "approve", "close"] as const).map((action) => (

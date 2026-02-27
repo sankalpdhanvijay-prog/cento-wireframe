@@ -21,7 +21,7 @@ interface AuditEntry {
   auditDate?: string;
   auditTime?: string;
   materialCount?: number;
-  status: "Draft" | "InReview" | "Closed";
+  status: "Draft" | "InReview" | "Closed" | "Rejected";
   materials: { code: string; name: string; category: string; systemStock: number; actualStock: number; variance: number; percentVariance: number; batchName: string; reason: string; costVariance?: number; countVariance?: number }[];
 }
 
@@ -59,7 +59,7 @@ const MOCK_AUDITS: AuditEntry[] = [
 export default function Audits() {
   const navigate = useNavigate();
   const [mainTab, setMainTab] = useState<"templates" | "status">("status");
-  const [statusTab, setStatusTab] = useState<"Draft" | "InReview" | "Closed">("Draft");
+  const [statusTab, setStatusTab] = useState<"Draft" | "InReview" | "Closed" | "Rejected">("Draft");
   const [search, setSearch] = useState("");
 
   const filteredTemplates = useMemo(() => {
@@ -91,7 +91,7 @@ export default function Audits() {
           Templates
         </button>
         <div className="inline-flex rounded-lg border border-border p-0.5 bg-muted/40">
-          {(["Draft", "InReview", "Closed"] as const).map((s) => (
+          {(["Draft", "InReview", "Rejected", "Closed"] as const).map((s) => (
             <button key={s} onClick={() => { setMainTab("status"); setStatusTab(s); }} className={cn("px-3 py-1.5 text-xs font-medium rounded-md transition-colors", mainTab === "status" && statusTab === s ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground")}>
               {s === "InReview" ? "In Review" : s}
             </button>
@@ -158,6 +158,9 @@ export default function Audits() {
                 {statusTab === "Closed" && (<>
                   <TableHead>Audit ID</TableHead><TableHead>Created By</TableHead><TableHead>Created On</TableHead><TableHead>Action</TableHead>
                 </>)}
+                {statusTab === "Rejected" && (<>
+                  <TableHead>Audit ID</TableHead><TableHead>Created By</TableHead><TableHead>Created On</TableHead><TableHead>Action</TableHead>
+                </>)}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -183,6 +186,11 @@ export default function Audits() {
                     <TableCell>{a.materialCount ?? 0}</TableCell>
                   </>)}
                   {statusTab === "Closed" && (<>
+                    <TableCell>{a.createdBy}</TableCell>
+                    <TableCell className="text-muted-foreground">{a.createdOn}</TableCell>
+                    <TableCell><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></TableCell>
+                  </>)}
+                  {statusTab === "Rejected" && (<>
                     <TableCell>{a.createdBy}</TableCell>
                     <TableCell className="text-muted-foreground">{a.createdOn}</TableCell>
                     <TableCell><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></TableCell>
