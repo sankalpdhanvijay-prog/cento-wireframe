@@ -86,10 +86,10 @@ export function NewDispatch() {
       </div>
 
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Requisition Details</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Purchase Details</CardTitle></CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
-            <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Requisition ID</p><p className="text-sm font-semibold text-primary">{requisitionId}</p></div>
+            <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Purchase ID</p><p className="text-sm font-semibold text-primary">{requisitionId}</p></div>
             <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Supplier</p><p className="text-sm text-foreground">{type === "PO" ? "Vendor" : "Outlet"}</p></div>
             <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">{type === "PO" ? "Vendor" : "Outlet"}</p><p className="text-sm text-foreground">{type === "PO" ? "Metro Supply" : "Central Warehouse"}</p></div>
           </div>
@@ -184,7 +184,7 @@ export function NewDispatch() {
       </Card>
 
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-30">
-        <div className="max-w-[1000px] mx-auto flex items-center justify-between px-6 py-3">
+        <div className="max-w-[1000px] mx-auto flex items-center justify-end gap-3 px-6 py-3">
           <Button variant="destructive" size="sm" onClick={handleDelete}><Trash2 className="h-3.5 w-3.5 mr-1" /> Delete</Button>
           <Button variant="cento" size="sm" onClick={handleDispatch}><SendHorizonal className="h-3.5 w-3.5 mr-1" /> Dispatch</Button>
         </div>
@@ -232,7 +232,7 @@ export default function ViewDispatchDetails() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
             <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">GDN ID</p><p className="text-sm font-semibold text-primary">{dispatch.id}</p></div>
-            <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Requisition ID</p><p className="text-sm font-medium">{dispatch.requisitionId}</p></div>
+            <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Purchase ID</p><p className="text-sm font-medium">{dispatch.requisitionId}</p></div>
             <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Deliver To</p><p className="text-sm">{dispatch.deliverTo}</p></div>
             <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">Dispatch Date</p><p className="text-sm text-muted-foreground">{dispatch.dispatchDate}</p></div>
             {dispatch.grnId && <div><p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-0.5">GRN ID</p><p className="text-sm">{dispatch.grnId}</p></div>}

@@ -74,10 +74,10 @@ export default function Dispatches() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableHead>Requisition ID</TableHead>
-                <TableHead>Raised By</TableHead>
-                <TableHead className="text-right">Total Value</TableHead>
-                <TableHead>Requisition Date</TableHead>
+                 <TableHead>Purchase ID</TableHead>
+78:                 <TableHead>Raised By</TableHead>
+79:                 <TableHead className="text-right">Total Value</TableHead>
+80:                 <TableHead>Purchase Date</TableHead>
                 <TableHead>Expected Delivery</TableHead>
                 <TableHead>Last Updated</TableHead>
               </TableRow>
@@ -112,7 +112,7 @@ export default function Dispatches() {
                 <TableHead>GDN ID</TableHead>
                 <TableHead>Dispatch Date</TableHead>
                 <TableHead>Deliver To</TableHead>
-                <TableHead>Requisition ID</TableHead>
+                 <TableHead>Purchase ID</TableHead>
                 <TableHead>GRN ID</TableHead>
                 <TableHead>Invoice ID</TableHead>
                 <TableHead className="text-right">Invoice Amount</TableHead>
@@ -161,7 +161,7 @@ export default function Dispatches() {
                 <TableHead>GDN ID</TableHead>
                 <TableHead>Dispatch Date</TableHead>
                 <TableHead>Deliver To</TableHead>
-                <TableHead>Requisition ID</TableHead>
+                <TableHead>Purchase ID</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
