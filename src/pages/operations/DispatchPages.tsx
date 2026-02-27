@@ -24,26 +24,45 @@ export function NewDispatch() {
   const requisitionId = state?.requisitionId ?? "PO-1003";
   const type = state?.type ?? "PO";
 
-  // Mock materials based on requisition
-  const mockMaterials = [
-    { name: "Tomato Paste 5kg", dispatchQty: 80, unitPrice: 150, taxPct: 12, lineTotal: 12000 },
-    { name: "Chickpeas 25kg", dispatchQty: 60, unitPrice: 180, taxPct: 5, lineTotal: 10800 },
-    { name: "Salt 50kg", dispatchQty: 60, unitPrice: 136.67, taxPct: 5, lineTotal: 8200 },
+  // Mock materials based on requisition (orderedQty is the original PO/TO qty)
+  const initialMaterials = [
+    { name: "Tomato Paste 5kg", orderedQty: 80, dispatchQty: 80, unitPrice: 150, taxPct: 12 },
+    { name: "Chickpeas 25kg", orderedQty: 60, dispatchQty: 60, unitPrice: 180, taxPct: 5 },
+    { name: "Salt 50kg", orderedQty: 60, dispatchQty: 60, unitPrice: 136.67, taxPct: 5 },
   ];
 
+  const [materials, setMaterials] = useState(initialMaterials);
   const [otherCharges, setOtherCharges] = useState<{ id: string; description: string; amount: number }[]>([]);
 
-  const subtotal = mockMaterials.reduce((s, m) => s + m.lineTotal, 0);
-  const totalTax = mockMaterials.reduce((s, m) => s + (m.lineTotal * m.taxPct / 100), 0);
+  const updateDispatchQty = (index: number, value: number) => {
+    const mat = materials[index];
+    if (value > mat.orderedQty) {
+      toast({ title: "Invalid Quantity", description: "Dispatching Stock cannot be more than Ordered Stock, Kindly review.", variant: "destructive" });
+      return;
+    }
+    setMaterials((prev) => prev.map((m, i) => i === index ? { ...m, dispatchQty: value } : m));
+  };
+
+  const computeLineTotal = (m: typeof materials[0]) => m.dispatchQty * m.unitPrice;
+
+  const subtotal = materials.reduce((s, m) => s + computeLineTotal(m), 0);
+  const totalTax = materials.reduce((s, m) => s + (computeLineTotal(m) * m.taxPct / 100), 0);
   const totalOther = otherCharges.reduce((s, c) => s + c.amount, 0);
   const grandTotal = subtotal + totalTax + totalOther;
 
+  const handleDelete = () => {
+    removeNewDispatch(requisitionId);
+    toast({ title: "Dispatch Deleted", description: `Dispatch for ${requisitionId} has been deleted.` });
+    navigate("/operations/dispatches", { state: { tab: "deleted" } });
+  };
+
   const handleDispatch = () => {
+    const matPayload = materials.map((m) => ({ name: m.name, dispatchQty: m.dispatchQty, unitPrice: m.unitPrice, taxPct: m.taxPct, lineTotal: computeLineTotal(m) }));
     addDispatch({
       requisitionId, type, supplierType: type === "PO" ? "Vendor" : undefined,
       vendor: type === "PO" ? "Metro Supply" : undefined, deliverTo: "Main Kitchen",
       dispatchDate: format(new Date(), "yyyy-MM-dd"), status: "In Transit", createdBy: "Admin",
-      materials: mockMaterials, subtotal, totalTax, otherCharges: totalOther, grandTotal,
+      materials: matPayload, subtotal, totalTax, otherCharges: totalOther, grandTotal,
     });
     removeNewDispatch(requisitionId);
     toast({ title: "Dispatch Created", description: `Dispatch for ${requisitionId} is now in transit.` });
@@ -78,12 +97,13 @@ export function NewDispatch() {
       </Card>
 
       <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Materials ({mockMaterials.length})</CardTitle></CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-base font-semibold">Materials ({materials.length})</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead>Item Name</TableHead>
+                <TableHead className="text-right">Ordered Stock</TableHead>
                 <TableHead className="text-right">Dispatch Stock</TableHead>
                 <TableHead className="text-right">Unit Price</TableHead>
                 <TableHead>Taxes</TableHead>
@@ -91,17 +111,30 @@ export function NewDispatch() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockMaterials.map((m, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">{m.name}</TableCell>
-                  <TableCell className="text-right">{m.dispatchQty}</TableCell>
-                  <TableCell className="text-right">{fmt(m.unitPrice)}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">{m.taxPct > 0 ? `GST ${m.taxPct}%` : "—"}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-medium">{fmt(m.lineTotal + m.lineTotal * m.taxPct / 100)}</TableCell>
-                </TableRow>
-              ))}
+              {materials.map((m, i) => {
+                const lineTotal = computeLineTotal(m);
+                return (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{m.name}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{m.orderedQty}</TableCell>
+                    <TableCell className="text-right">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={m.orderedQty}
+                        value={m.dispatchQty}
+                        onChange={(e) => updateDispatchQty(i, parseInt(e.target.value) || 0)}
+                        className="h-7 w-20 text-sm text-right ml-auto bg-background"
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">{fmt(m.unitPrice)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">{m.taxPct > 0 ? `GST ${m.taxPct}%` : "—"}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{fmt(lineTotal + lineTotal * m.taxPct / 100)}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -151,7 +184,8 @@ export function NewDispatch() {
       </Card>
 
       <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-lg z-30">
-        <div className="max-w-[1000px] mx-auto flex items-center justify-end gap-3 px-6 py-3">
+        <div className="max-w-[1000px] mx-auto flex items-center justify-between px-6 py-3">
+          <Button variant="destructive" size="sm" onClick={handleDelete}><Trash2 className="h-3.5 w-3.5 mr-1" /> Delete</Button>
           <Button variant="cento" size="sm" onClick={handleDispatch}><SendHorizonal className="h-3.5 w-3.5 mr-1" /> Dispatch</Button>
         </div>
       </div>
