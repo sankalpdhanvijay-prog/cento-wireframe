@@ -41,7 +41,11 @@ import Materials from "./pages/entities/Materials";
 import Recipes from "./pages/entities/Recipes";
 import Vendors from "./pages/entities/Vendors";
 import Audits from "./pages/Audits";
+import NewAudit from "./pages/audits/NewAudit";
+import AuditDetails from "./pages/audits/AuditDetails";
 import Wastage from "./pages/Wastage";
+import NewWastage from "./pages/wastage/NewWastage";
+import WastageDetails from "./pages/wastage/WastageDetails";
 import Settings from "./pages/settings/Settings";
 
 const queryClient = new QueryClient();
@@ -102,7 +106,11 @@ const App = () => (
                     <Route path="/entities/recipes" element={<Recipes />} />
                     <Route path="/entities/vendors" element={<Vendors />} />
                     <Route path="/audits" element={<Audits />} />
+                    <Route path="/audits/new" element={<NewAudit />} />
+                    <Route path="/audits/:id" element={<AuditDetails />} />
                     <Route path="/wastage" element={<Wastage />} />
+                    <Route path="/wastage/new" element={<NewWastage />} />
+                    <Route path="/wastage/:id" element={<WastageDetails />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/settings/*" element={<Settings />} />
                   </Route>
