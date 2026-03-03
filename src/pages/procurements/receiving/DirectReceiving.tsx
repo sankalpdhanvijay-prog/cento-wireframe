@@ -205,7 +205,7 @@ export default function DirectReceiving() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/procurements/new-receiving")}
+              onClick={() => navigate("/procurements/receivings")}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -396,7 +396,7 @@ export default function DirectReceiving() {
       <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border py-3 -mx-1 px-1 flex items-center justify-between">
         <Button variant="outline" className="text-sm">Save Draft</Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={() => navigate("/procurements/new-receiving")} className="text-sm">Cancel</Button>
+          <Button variant="ghost" onClick={() => navigate("/procurements/receivings")} className="text-sm">Cancel</Button>
           <Button variant="cento" disabled={!canSubmit} onClick={() => setShowSubmitDialog(true)} className="text-sm">Submit Receiving</Button>
         </div>
       </div>
@@ -440,7 +440,7 @@ export default function DirectReceiving() {
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSubmitDialog(false)}>Cancel</Button>
-            <Button variant="cento" onClick={() => { setShowSubmitDialog(false); navigate("/procurements/new-receiving"); }}>Confirm & Submit</Button>
+            <Button variant="cento" onClick={() => { setShowSubmitDialog(false); navigate("/procurements/receivings"); }}>Confirm & Submit</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
