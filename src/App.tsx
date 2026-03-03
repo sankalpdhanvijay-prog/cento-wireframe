@@ -17,11 +17,9 @@ import NewPurchase from "./pages/procurements/NewPurchase";
 import Purchases from "./pages/procurements/Purchases";
 import Receivings from "./pages/procurements/Receivings";
 import ClosedOrders from "./pages/procurements/ClosedOrders";
-import ReceivingLanding from "./pages/procurements/receiving/ReceivingLanding";
-import CreateReceivingTypeSelect from "./pages/procurements/receiving/CreateReceivingTypeSelect";
-import POBasedReceiving from "./pages/procurements/receiving/POBasedReceiving";
 import DirectReceiving from "./pages/procurements/receiving/DirectReceiving";
-import ViewReceiving from "./pages/procurements/receiving/ViewReceiving";
+import ReceiveOrder from "./pages/procurements/receiving/ReceiveOrder";
+import ViewReceivingOrder from "./pages/procurements/receiving/ViewReceivingOrder";
 import ViewReceivingDetail from "./pages/procurements/receivings/ViewReceivingDetail";
 import AllOrders from "./pages/procurements/AllOrders";
 import ViewOrderDetails from "./pages/procurements/orders/ViewOrderDetails";
@@ -76,13 +74,14 @@ const App = () => (
                     <Route path="/procurements/closed-orders" element={<ClosedOrders />} />
                     <Route path="/procurements/closed-orders/:id" element={<ViewReceivingDetail />} />
 
-                    {/* Legacy receiving flow routes */}
+                    {/* Receiving flow routes */}
+                    <Route path="/procurements/receiving/direct" element={<DirectReceiving />} />
+                    <Route path="/procurements/receiving/receive/:id" element={<ReceiveOrder />} />
+                    <Route path="/procurements/receiving/view/:id" element={<ViewReceivingOrder />} />
+
+                    {/* Legacy redirects */}
                     <Route path="/procurements/new-receiving" element={<Navigate to="/procurements/receivings" replace />} />
-                    <Route path="/procurements/new-receiving/create" element={<CreateReceivingTypeSelect />} />
-                    <Route path="/procurements/new-receiving/po" element={<POBasedReceiving />} />
-                    <Route path="/procurements/new-receiving/direct" element={<DirectReceiving />} />
-                    <Route path="/procurements/new-receiving/view/:id" element={<ViewReceiving />} />
-                    <Route path="/procurements/new-receiving/edit/:id" element={<POBasedReceiving />} />
+                    <Route path="/procurements/new-receiving/*" element={<Navigate to="/procurements/receivings" replace />} />
 
                     {/* Legacy all-orders redirect */}
                     <Route path="/procurements/all-orders" element={<Navigate to="/procurements/closed-orders" replace />} />
