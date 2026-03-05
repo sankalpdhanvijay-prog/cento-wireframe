@@ -101,10 +101,10 @@ const MOCK_ORDERS: OrderRow[] = [
 ];
 
 const MOCK_FULFILLED: FulfilledRow[] = [
-  { id: "f1", grnId: "GRN-2026-001", supplier: "Sysco Foods", requisitionId: "PO-1005", dispatchId: "DSP-001", receivedBy: "Ankit", receivedOn: "2026-01-28", amount: 14200 },
-  { id: "f2", grnId: "GRN-2026-003", supplier: "US Foods", requisitionId: "PO-1007", dispatchId: "DSP-003", receivedBy: "Raj", receivedOn: "2026-02-03", amount: 30500 },
-  { id: "f3", grnId: "GRN-2026-004", supplier: "Metro Supply", requisitionId: "PO-1003", dispatchId: "DSP-005", receivedBy: "Ankit", receivedOn: "2026-02-08", amount: 33490 },
-  { id: "f4", grnId: "GRN-2026-005", supplier: "Main Kitchen", requisitionId: "TO-2005", dispatchId: "DSP-010", receivedBy: "Meera", receivedOn: "2026-02-10", amount: 18000 },
+  { id: "1", grnId: "GRN-2026-001", supplier: "Fresh Farms Pvt Ltd", requisitionId: "PO-1001", dispatchId: "DSP-001", receivedBy: "Rahul M.", receivedOn: "2026-02-10", amount: 32500 },
+  { id: "2", grnId: "GRN-2026-002", supplier: "Spice World Traders", requisitionId: "PO-1007", dispatchId: "DSP-003", receivedBy: "Priya K.", receivedOn: "2026-02-09", amount: 8750 },
+  { id: "3", grnId: "GRN-2026-003", supplier: "Daily Dairy Supplies", requisitionId: "PO-1002", dispatchId: "DSP-005", receivedBy: "Ankit S.", receivedOn: "2026-02-08", amount: 28800 },
+  { id: "5", grnId: "GRN-2026-005", supplier: "Daily Dairy Supplies", requisitionId: "PO-1003", dispatchId: "DSP-010", receivedBy: "Rahul M.", receivedOn: "2026-02-11", amount: 54000 },
 ];
 
 const fmt = (n: number) =>
