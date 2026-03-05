@@ -416,10 +416,8 @@ function FulfilledTable({ rows, navigate }: {
   navigate: ReturnType<typeof useNavigate>;
 }) {
   const getDetailRoute = (row: FulfilledRow) => {
-    if (row.requisitionId.startsWith("TO-")) {
-      return `/operations/transfers/${row.requisitionId}`;
-    }
-    return `/procurements/purchases/${row.requisitionId}`;
+    // All Receivings → link to the receiving detail page
+    return `/procurements/receivings/${row.id}`;
   };
 
   return (

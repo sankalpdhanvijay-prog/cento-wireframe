@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ArrowLeft, SendHorizonal } from "lucide-react";
+import { ArrowLeft, SendHorizonal, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -313,11 +313,23 @@ export default function ViewDispatchDetails() {
     );
   }
 
+  const handleExport = () => {
+    const blob = new Blob([`Dispatch Details: ${dispatch.id}\nPurchase ID: ${dispatch.requisitionId}\nDeliver To: ${dispatch.deliverTo}\nTotal: ${fmt(dispatch.grandTotal)}`], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${dispatch.id}-details.txt`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5 max-w-[1000px] pb-28">
-      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExport}>
+          <Download className="h-3.5 w-3.5" /> Export
+        </Button>
+      </div>
 
       <Card>
         <CardHeader className="pb-3">
