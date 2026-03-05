@@ -2,9 +2,8 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Pencil } from "lucide-react";
+import { Search, Pencil, Eye } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const MOCK_W_TEMPLATES = [
@@ -121,34 +120,32 @@ export default function Wastage() {
                 <TableHead>Created On</TableHead>
                 <TableHead>Reference ID</TableHead>
                 <TableHead className="text-right">Wastage Amount</TableHead>
-                {statusTab === "InReview" && <TableHead>Status</TableHead>}
-                {statusTab === "Rejected" && <TableHead>Status</TableHead>}
+                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredWastages.length === 0 ? (
-                <TableRow><TableCell colSpan={statusTab === "InReview" || statusTab === "Rejected" ? 6 : 5} className="text-center py-12 text-muted-foreground">No wastages found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No wastages found.</TableCell></TableRow>
               ) : filteredWastages.map((w) => (
-                <TableRow
-                  key={w.id}
-                  className="cento-row-clickable"
-                  onClick={() => navigate(`/wastage/${w.id}`, { state: { wastage: w } })}
-                >
+                <TableRow key={w.id} className="hover:bg-muted/20">
                   <TableCell className="font-medium text-primary">{w.id}</TableCell>
                   <TableCell>{w.createdBy}</TableCell>
                   <TableCell className="text-muted-foreground">{w.createdOn}</TableCell>
                   <TableCell className="text-muted-foreground">{w.referenceId}</TableCell>
                   <TableCell className="text-right font-medium">{fmt(w.wastageAmount)}</TableCell>
-                  {statusTab === "InReview" && (
-                    <TableCell>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-200 text-amber-700 bg-amber-50">In Review</Badge>
-                    </TableCell>
-                  )}
-                  {statusTab === "Rejected" && (
-                    <TableCell>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-red-200 text-red-600 bg-red-50">Rejected</Badge>
-                    </TableCell>
-                  )}
+                  <TableCell>
+                    {statusTab === "Draft" ? (
+                      <Button variant="ghost" size="sm" className="text-xs h-7"
+                        onClick={() => navigate(`/wastage/${w.id}`, { state: { wastage: w } })}>
+                        <Pencil className="h-3 w-3 mr-1" /> Edit
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="text-xs h-7"
+                        onClick={() => navigate(`/wastage/${w.id}`, { state: { wastage: w } })}>
+                        <Eye className="h-3 w-3 mr-1" /> View Details
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

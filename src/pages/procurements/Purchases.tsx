@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Search } from "lucide-react";
+import { Plus, Trash2, Search, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -81,7 +81,7 @@ export default function Purchases() {
             <TableHead>Created By</TableHead>
             <TableHead>Created On</TableHead>
             <TableHead>Last Updated</TableHead>
-            <TableHead className="w-[48px]" />
+            <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
       case "raised":
@@ -95,7 +95,7 @@ export default function Purchases() {
             <TableHead className="text-right">Ordered Qty</TableHead>
             <TableHead>Created By</TableHead>
             <TableHead>Created On</TableHead>
-            <TableHead className="w-[48px]" />
+            <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
       case "approved":
@@ -110,7 +110,7 @@ export default function Purchases() {
             <TableHead>Created By</TableHead>
             <TableHead>Created On</TableHead>
             <TableHead>Approved On</TableHead>
-            <TableHead className="w-[48px]" />
+            <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
       case "cancelled":
@@ -123,7 +123,7 @@ export default function Purchases() {
             <TableHead className="text-right">Total Value</TableHead>
             <TableHead>Cancelled Date</TableHead>
             <TableHead>Cancelled By</TableHead>
-            <TableHead className="w-[48px]" />
+            <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
       default:
@@ -131,33 +131,27 @@ export default function Purchases() {
     }
   };
 
+  const supplierBadge = (row: PurchaseOrder) => (
+    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0",
+      row.supplierType === "Outlet" ? "border-blue-200 text-blue-700 bg-blue-50" : "border-border"
+    )}>
+      {row.supplierType || "Vendor"}
+    </Badge>
+  );
+
+  const viewBtn = (row: PurchaseOrder) => (
+    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/procurements/purchases/${row.id}`)}>
+      <Eye className="h-3 w-3 mr-1" /> View Details
+    </Button>
+  );
+
   const renderRow = (row: PurchaseOrder) => {
-    const detailPath = `/procurements/purchases/${row.id}`;
-    const deleteBtn = (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-        onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    );
-
-    const supplierBadge = (
-      <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0",
-        row.supplierType === "Outlet" ? "border-blue-200 text-blue-700 bg-blue-50" : "border-border"
-      )}>
-        {row.supplierType || "Vendor"}
-      </Badge>
-    );
-
     switch (tab) {
       case "drafted":
         return (
-          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="hover:bg-muted/20">
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
-            <TableCell>{supplierBadge}</TableCell>
+            <TableCell>{supplierBadge(row)}</TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
@@ -165,28 +159,40 @@ export default function Purchases() {
             <TableCell>{row.createdBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.createdOn}</TableCell>
             <TableCell className="text-muted-foreground">{row.lastUpdated}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-1">
+                {viewBtn(row)}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => setDeleteTarget(row)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </TableCell>
           </TableRow>
         );
       case "raised":
         return (
-          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="hover:bg-muted/20">
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
-            <TableCell>{supplierBadge}</TableCell>
+            <TableCell>{supplierBadge(row)}</TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
             <TableCell className="text-right">{row.totalQty}</TableCell>
             <TableCell>{row.createdBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.createdOn}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
+            <TableCell>{viewBtn(row)}</TableCell>
           </TableRow>
         );
       case "approved":
         return (
-          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="hover:bg-muted/20">
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
-            <TableCell>{supplierBadge}</TableCell>
+            <TableCell>{supplierBadge(row)}</TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
@@ -194,20 +200,20 @@ export default function Purchases() {
             <TableCell>{row.createdBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.createdOn}</TableCell>
             <TableCell className="text-muted-foreground">{row.approvedOn ?? "—"}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
+            <TableCell>{viewBtn(row)}</TableCell>
           </TableRow>
         );
       case "cancelled":
         return (
-          <TableRow key={row.id} className="cento-row-clickable" onClick={() => navigate(detailPath)}>
+          <TableRow key={row.id} className="hover:bg-muted/20">
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
-            <TableCell>{supplierBadge}</TableCell>
+            <TableCell>{supplierBadge(row)}</TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
             <TableCell className="text-muted-foreground">{row.cancelledDate}</TableCell>
             <TableCell>{row.cancelledBy}</TableCell>
-            <TableCell onClick={(e) => e.stopPropagation()}>{deleteBtn}</TableCell>
+            <TableCell>{viewBtn(row)}</TableCell>
           </TableRow>
         );
       default:

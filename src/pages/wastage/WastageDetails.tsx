@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
@@ -53,15 +53,21 @@ export default function WastageDetails() {
   if (!wastage) {
     return (
       <div className="space-y-4 max-w-[1200px]">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
+        </Button>
         <h1 className="cento-page-title text-xl">Wastage Details</h1>
         <p className="text-muted-foreground">Wastage {id} not found.</p>
-        <Button variant="outline" onClick={() => navigate("/wastage")}>Back to Wastages</Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-4 max-w-[1200px]">
+      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
+      </Button>
+
       <div>
         <h1 className="cento-page-title text-xl">Wastage: {wastage.id}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
@@ -139,7 +145,6 @@ export default function WastageDetails() {
             </div>
           </div>
         )}
-        {/* Closed & Rejected: no CTAs */}
       </div>
 
       {(["draft", "template", "log", "approve", "reject"] as const).map((action) => (

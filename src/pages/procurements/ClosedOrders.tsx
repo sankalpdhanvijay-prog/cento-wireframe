@@ -1,35 +1,86 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
-import { Search } from "lucide-react";
+import { Search, Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface ClosedOrderRow {
+export interface ClosedOrderRow {
   id: string;
-  poId: string;
-  grnId: string;
-  receivingType: "PO-Based" | "Direct";
-  vendor: string;
-  outlet: string;
-  totalValue: number;
+  orderId: string;
+  supplierType: "Vendor" | "Outlet" | "Transfer";
+  supplier: string;
+  orderedAt: string;
+  expectedDelivery: string;
   orderedQty: number;
   receivedQty: number;
-  receivingDate: string;
-  poCreatedBy: string;
-  poCreatedOn: string;
+  lastReceivingDate: string;
+  orderAmount: number;
+  closedAt: string;
+  receivings: {
+    requisitionId: string;
+    receivedQty: number;
+    orderAmount: number;
+    invoiceAmount: number;
+    creationDate: string;
+    createdBy: string;
+    receivingDate: string;
+  }[];
+  shortSupply?: { materialName: string; orderedQty: number; receivedQty: number; shortQty: number }[];
 }
 
 const MOCK_CLOSED: ClosedOrderRow[] = [
-  { id: "1", poId: "PO-1005", grnId: "GRN-2025-088", receivingType: "PO-Based", vendor: "Fresh Farms Pvt Ltd", outlet: "Main Kitchen", totalValue: 45000, orderedQty: 200, receivedQty: 200, receivingDate: "2025-12-15", poCreatedBy: "Rahul M.", poCreatedOn: "2025-12-01" },
-  { id: "2", poId: "PO-1006", grnId: "GRN-2025-089", receivingType: "PO-Based", vendor: "Daily Dairy Supplies", outlet: "Branch - Indiranagar", totalValue: 22000, orderedQty: 100, receivedQty: 95, receivingDate: "2025-12-18", poCreatedBy: "Priya K.", poCreatedOn: "2025-12-05" },
-  { id: "3", poId: "—", grnId: "GRN-2025-092", receivingType: "Direct", vendor: "Spice World Traders", outlet: "Main Kitchen", totalValue: 9800, orderedQty: 50, receivedQty: 50, receivingDate: "2026-01-03", poCreatedBy: "Ankit S.", poCreatedOn: "2026-01-03" },
-  { id: "4", poId: "PO-1007", grnId: "GRN-2026-004", receivingType: "PO-Based", vendor: "Fresh Farms Pvt Ltd", outlet: "Branch - Koramangala", totalValue: 31500, orderedQty: 140, receivedQty: 140, receivingDate: "2026-01-20", poCreatedBy: "Sona R.", poCreatedOn: "2026-01-08" },
+  {
+    id: "co1", orderId: "PO-1005", supplierType: "Vendor", supplier: "Fresh Farms Pvt Ltd",
+    orderedAt: "2025-12-01", expectedDelivery: "2025-12-10", orderedQty: 200, receivedQty: 200,
+    lastReceivingDate: "2025-12-15", orderAmount: 45000, closedAt: "2025-12-16",
+    receivings: [
+      { requisitionId: "PO-1005", receivedQty: 120, orderAmount: 27000, invoiceAmount: 26800, creationDate: "2025-12-08", createdBy: "Rahul M.", receivingDate: "2025-12-10" },
+      { requisitionId: "PO-1005", receivedQty: 80, orderAmount: 18000, invoiceAmount: 18000, creationDate: "2025-12-12", createdBy: "Priya K.", receivingDate: "2025-12-15" },
+    ],
+  },
+  {
+    id: "co2", orderId: "PO-1006", supplierType: "Vendor", supplier: "Daily Dairy Supplies",
+    orderedAt: "2025-12-05", expectedDelivery: "2025-12-15", orderedQty: 100, receivedQty: 95,
+    lastReceivingDate: "2025-12-18", orderAmount: 22000, closedAt: "2025-12-19",
+    receivings: [
+      { requisitionId: "PO-1006", receivedQty: 95, orderAmount: 20900, invoiceAmount: 20800, creationDate: "2025-12-14", createdBy: "Priya K.", receivingDate: "2025-12-18" },
+    ],
+    shortSupply: [
+      { materialName: "Full Cream Milk", orderedQty: 50, receivedQty: 45, shortQty: 5 },
+    ],
+  },
+  {
+    id: "co3", orderId: "TO-2001", supplierType: "Transfer", supplier: "Main Kitchen",
+    orderedAt: "2026-01-03", expectedDelivery: "2026-01-08", orderedQty: 50, receivedQty: 50,
+    lastReceivingDate: "2026-01-07", orderAmount: 9800, closedAt: "2026-01-08",
+    receivings: [
+      { requisitionId: "GDN-3001", receivedQty: 50, orderAmount: 9800, invoiceAmount: 9800, creationDate: "2026-01-05", createdBy: "Ankit S.", receivingDate: "2026-01-07" },
+    ],
+  },
+  {
+    id: "co4", orderId: "PO-1007", supplierType: "Outlet", supplier: "Fresh Farms Pvt Ltd",
+    orderedAt: "2026-01-08", expectedDelivery: "2026-01-18", orderedQty: 140, receivedQty: 140,
+    lastReceivingDate: "2026-01-20", orderAmount: 31500, closedAt: "2026-01-21",
+    receivings: [
+      { requisitionId: "GDN-3005", receivedQty: 80, orderAmount: 18000, invoiceAmount: 17900, creationDate: "2026-01-12", createdBy: "Sona R.", receivingDate: "2026-01-15" },
+      { requisitionId: "GDN-3006", receivedQty: 60, orderAmount: 13500, invoiceAmount: 13500, creationDate: "2026-01-18", createdBy: "Ankit S.", receivingDate: "2026-01-20" },
+    ],
+  },
 ];
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+
+const TYPE_BADGE: Record<string, string> = {
+  Vendor: "bg-blue-50 text-blue-700 border-blue-200",
+  Outlet: "bg-purple-50 text-purple-700 border-purple-200",
+  Transfer: "bg-teal-50 text-teal-700 border-teal-200",
+};
 
 export default function ClosedOrders() {
   const navigate = useNavigate();
@@ -40,9 +91,8 @@ export default function ClosedOrders() {
     const q = search.toLowerCase();
     return MOCK_CLOSED.filter(
       (r) =>
-        r.poId.toLowerCase().includes(q) ||
-        r.grnId.toLowerCase().includes(q) ||
-        r.vendor.toLowerCase().includes(q)
+        r.orderId.toLowerCase().includes(q) ||
+        r.supplier.toLowerCase().includes(q)
     );
   }, [search]);
 
@@ -55,7 +105,7 @@ export default function ClosedOrders() {
       <div className="relative w-72">
         <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
         <Input
-          placeholder="Search by PO ID, GRN ID or vendor..."
+          placeholder="Search by Order ID or supplier..."
           className="pl-8 h-9 text-xs bg-card"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -66,17 +116,17 @@ export default function ClosedOrders() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
-              <TableHead className="w-[110px]">PO ID</TableHead>
-              <TableHead className="w-[140px]">GRN ID</TableHead>
-              <TableHead>Receiving Type</TableHead>
-              <TableHead>Vendor</TableHead>
-              <TableHead>Outlet</TableHead>
-              <TableHead className="text-right">Total Value</TableHead>
+              <TableHead className="w-[100px]">Order ID</TableHead>
+              <TableHead>Supplier Type</TableHead>
+              <TableHead>Supplier</TableHead>
+              <TableHead>Ordered At</TableHead>
+              <TableHead>Expected Delivery</TableHead>
               <TableHead className="text-right">Ordered Qty</TableHead>
               <TableHead className="text-right">Received Qty</TableHead>
-              <TableHead>Receiving Date</TableHead>
-              <TableHead>PO Created By</TableHead>
-              <TableHead>PO Created On</TableHead>
+              <TableHead>Last Receiving Date</TableHead>
+              <TableHead className="text-right">Order Amount</TableHead>
+              <TableHead>Closed At</TableHead>
+              <TableHead className="w-[100px]">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -88,26 +138,27 @@ export default function ClosedOrders() {
               </TableRow>
             ) : (
               rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="cento-row-clickable"
-                  onClick={() => navigate(`/procurements/closed-orders/${row.id}`)}
-                >
-                  <TableCell className="font-medium text-primary">{row.poId}</TableCell>
-                  <TableCell className="font-medium text-muted-foreground">{row.grnId}</TableCell>
+                <TableRow key={row.id} className="hover:bg-muted/20">
+                  <TableCell className="font-medium text-primary">{row.orderId}</TableCell>
                   <TableCell>
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${row.receivingType === "PO-Based" ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"}`}>
-                      {row.receivingType}
-                    </span>
+                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", TYPE_BADGE[row.supplierType])}>
+                      {row.supplierType}
+                    </Badge>
                   </TableCell>
-                  <TableCell>{row.vendor}</TableCell>
-                  <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
-                  <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
+                  <TableCell>{row.supplier}</TableCell>
+                  <TableCell className="text-muted-foreground">{row.orderedAt}</TableCell>
+                  <TableCell className="text-muted-foreground">{row.expectedDelivery}</TableCell>
                   <TableCell className="text-right">{row.orderedQty}</TableCell>
                   <TableCell className="text-right text-emerald-700">{row.receivedQty}</TableCell>
-                  <TableCell className="text-muted-foreground">{row.receivingDate}</TableCell>
-                  <TableCell>{row.poCreatedBy}</TableCell>
-                  <TableCell className="text-muted-foreground">{row.poCreatedOn}</TableCell>
+                  <TableCell className="text-muted-foreground">{row.lastReceivingDate}</TableCell>
+                  <TableCell className="text-right font-medium">{fmt(row.orderAmount)}</TableCell>
+                  <TableCell className="text-muted-foreground">{row.closedAt}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" className="text-xs h-7"
+                      onClick={() => navigate(`/procurements/closed-orders/${row.id}`, { state: { order: row } })}>
+                      <Eye className="h-3 w-3 mr-1" /> View
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}

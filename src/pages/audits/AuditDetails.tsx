@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, ArrowLeft } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { toast } from "@/hooks/use-toast";
@@ -51,15 +51,21 @@ export default function AuditDetails() {
   if (!audit) {
     return (
       <div className="space-y-4 max-w-[1200px]">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
+        </Button>
         <h1 className="cento-page-title text-xl">Audit Details</h1>
         <p className="text-muted-foreground">Audit {id} not found.</p>
-        <Button variant="outline" onClick={() => navigate("/audits")}>Back to Audits</Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-4 max-w-[1200px]">
+      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
+      </Button>
+
       <div>
         <h1 className="cento-page-title text-xl">Audit: {audit.id}</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
@@ -86,25 +92,13 @@ export default function AuditDetails() {
                 <TableHead>Category</TableHead>
                 <TableHead className="text-right">System Stock</TableHead>
                 <TableHead className="text-right">Actual Stock</TableHead>
-                {status === "Draft" && (<>
+                {(status === "Draft" || status === "InReview") && (<>
                   <TableHead className="text-right">Variance</TableHead>
                   <TableHead className="text-right">% Variance</TableHead>
                   <TableHead>Batch Name</TableHead>
                   <TableHead>Reason</TableHead>
                 </>)}
-                {status === "InReview" && (<>
-                  <TableHead className="text-right">Variance</TableHead>
-                  <TableHead className="text-right">% Variance</TableHead>
-                  <TableHead>Batch Name</TableHead>
-                  <TableHead>Reason</TableHead>
-                </>)}
-                {status === "Closed" && (<>
-                  <TableHead className="text-right">Cost Variance</TableHead>
-                  <TableHead className="text-right">Count Variance</TableHead>
-                  <TableHead>Batch Name</TableHead>
-                  <TableHead>Reason</TableHead>
-                </>)}
-                {status === "Rejected" && (<>
+                {(status === "Closed" || status === "Rejected") && (<>
                   <TableHead className="text-right">Cost Variance</TableHead>
                   <TableHead className="text-right">Count Variance</TableHead>
                   <TableHead>Batch Name</TableHead>
@@ -126,25 +120,13 @@ export default function AuditDetails() {
                       <Input type="number" className="h-8 w-20 text-xs text-right ml-auto" defaultValue={m.actualStock} />
                     ) : m.actualStock}
                   </TableCell>
-                  {status === "Draft" && (<>
+                  {(status === "Draft" || status === "InReview") && (<>
                     <TableCell className="text-right">{m.variance}</TableCell>
                     <TableCell className="text-right">{m.percentVariance.toFixed(2)}%</TableCell>
-                    <TableCell><Input className="h-8 w-24 text-xs" defaultValue={m.batchName} /></TableCell>
+                    <TableCell>{status === "Draft" ? <Input className="h-8 w-24 text-xs" defaultValue={m.batchName} /> : <span className="text-muted-foreground">{m.batchName}</span>}</TableCell>
                     <TableCell className="text-muted-foreground">{m.reason}</TableCell>
                   </>)}
-                  {status === "InReview" && (<>
-                    <TableCell className="text-right">{m.variance}</TableCell>
-                    <TableCell className="text-right">{m.percentVariance.toFixed(2)}%</TableCell>
-                    <TableCell className="text-muted-foreground">{m.batchName}</TableCell>
-                    <TableCell className="text-muted-foreground">{m.reason}</TableCell>
-                  </>)}
-                  {status === "Closed" && (<>
-                    <TableCell className="text-right">{m.costVariance ?? "—"}</TableCell>
-                    <TableCell className="text-right">{m.countVariance ?? m.variance}</TableCell>
-                    <TableCell className="text-muted-foreground">{m.batchName}</TableCell>
-                    <TableCell className="text-muted-foreground">{m.reason}</TableCell>
-                  </>)}
-                  {status === "Rejected" && (<>
+                  {(status === "Closed" || status === "Rejected") && (<>
                     <TableCell className="text-right">{m.costVariance ?? "—"}</TableCell>
                     <TableCell className="text-right">{m.countVariance ?? m.variance}</TableCell>
                     <TableCell className="text-muted-foreground">{m.batchName}</TableCell>
@@ -156,7 +138,6 @@ export default function AuditDetails() {
           </Table>
         </div>
 
-        {/* CTAs based on status */}
         {status === "Draft" && (
           <div className="flex items-center justify-between pt-2">
             <div className="flex gap-2">
@@ -175,7 +156,6 @@ export default function AuditDetails() {
             </div>
           </div>
         )}
-        {/* Closed & Rejected: no CTAs */}
       </div>
 
       {(["draft", "template", "update", "reject", "approve", "close"] as const).map((action) => (
