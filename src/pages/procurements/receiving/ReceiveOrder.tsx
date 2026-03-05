@@ -19,34 +19,30 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { POSummaryBlock, ShortSupplySection } from "./ReceivingFormShared";
+import { POSummaryBlock } from "./ReceivingFormShared";
+import { toast } from "@/hooks/use-toast";
 import type { OrderRow, ReceivingEntry } from "../Receivings";
 
-/* ─── Mock order lookup (same source) ─── */
+/* ─── Mock order lookup ─── */
 const MOCK_ORDERS: OrderRow[] = [
   {
-    id: "or1", orderId: "PO-1005", orderType: "Vendor", supplier: "Sysco Foods", outlet: "Main Kitchen",
-    orderedAt: "2026-01-20", expectedDelivery: "2026-02-01", orderedQty: 310, receivedQty: 180, pendingQty: 130, orderAmount: 44800,
-    receivings: [
-      { id: "re1", requisitionId: "PO-1005", receivingQty: 100, orderAmount: 14400, invoiceAmount: 14200, creationDate: "2026-01-25", createdBy: "Ankit", receivingDate: "2026-01-28" },
-      { id: "re2", requisitionId: "PO-1005", receivingQty: 80, orderAmount: 11520, invoiceAmount: 11520, creationDate: "2026-01-30", createdBy: "Meera", receivingDate: null },
-    ],
+    id: "or1", orderId: "PO-1010", orderType: "Vendor", supplier: "Sysco Foods", outlet: "Main Kitchen",
+    orderedAt: "2026-02-15", expectedDelivery: "2026-02-25", orderedQty: 200, receivedQty: 0, pendingQty: 200, orderAmount: 38000,
+    receivings: [],
   },
   {
-    id: "or2", orderId: "PO-1007", orderType: "Vendor", supplier: "US Foods", outlet: "Main Kitchen",
-    orderedAt: "2026-01-10", expectedDelivery: "2026-02-05", orderedQty: 250, receivedQty: 180, pendingQty: 70, orderAmount: 42560,
-    receivings: [
-      { id: "re3", requisitionId: "PO-1007", receivingQty: 180, orderAmount: 30643, invoiceAmount: 30500, creationDate: "2026-02-01", createdBy: "Raj", receivingDate: "2026-02-03" },
-    ],
+    id: "or2", orderId: "PO-1005", orderType: "Vendor", supplier: "US Foods", outlet: "Main Kitchen",
+    orderedAt: "2026-01-20", expectedDelivery: "2026-02-01", orderedQty: 500, receivedQty: 200, pendingQty: 300, orderAmount: 72000,
+    receivings: [],
   },
   {
     id: "or3", orderId: "PO-1008", orderType: "Outlet", supplier: "Fresh Direct", outlet: "Central Warehouse",
-    orderedAt: "2026-01-08", expectedDelivery: "2026-02-03", orderedQty: 100, receivedQty: 0, pendingQty: 100, orderAmount: 15000,
+    orderedAt: "2026-01-08", expectedDelivery: "2026-02-03", orderedQty: 150, receivedQty: 90, pendingQty: 60, orderAmount: 22500,
     receivings: [],
   },
   {
     id: "or4", orderId: "TO-2005", orderType: "Transfer", supplier: "Main Kitchen", outlet: "Central Warehouse",
-    orderedAt: "2026-01-28", expectedDelivery: "2026-02-05", orderedQty: 100, receivedQty: 0, pendingQty: 100, orderAmount: 18000,
+    orderedAt: "2026-01-28", expectedDelivery: "2026-02-05", orderedQty: 100, receivedQty: 60, pendingQty: 40, orderAmount: 18000,
     receivings: [],
   },
 ];
@@ -65,18 +61,18 @@ const MOCK_OTHER_CHARGE_REASONS = [
 const SHORT_SUPPLY_REASONS = ["Short Supply", "Damaged", "Expired", "Quality Issue", "Other"];
 
 const MOCK_MATERIALS = [
-  { id: "m1", code: "RM-001", name: "Basmati Rice", unit: "KG", ordered: 100, pending: 100, unitPrice: 220 },
-  { id: "m2", code: "RM-002", name: "Sunflower Oil", unit: "LTR", ordered: 30, pending: 30, unitPrice: 350 },
-  { id: "m3", code: "RM-003", name: "Wheat Flour", unit: "KG", ordered: 40, pending: 40, unitPrice: 75 },
-  { id: "m4", code: "RM-004", name: "Olive Oil", unit: "LTR", ordered: 25, pending: 25, unitPrice: 480 },
-  { id: "m5", code: "RM-005", name: "Chicken Breast", unit: "KG", ordered: 100, pending: 50, unitPrice: 240 },
+  { id: "m1", code: "RM-001", name: "Basmati Rice", unit: "KG", ordered: 100, pending: 80, unitPrice: 220, defaultTax: { name: "GST", rate: 5 } },
+  { id: "m2", code: "RM-002", name: "Sunflower Oil", unit: "LTR", ordered: 30, pending: 25, unitPrice: 350, defaultTax: { name: "GST", rate: 18 } },
+  { id: "m3", code: "RM-003", name: "Wheat Flour", unit: "KG", ordered: 40, pending: 40, unitPrice: 75, defaultTax: { name: "CGST", rate: 9 } },
+  { id: "m4", code: "RM-004", name: "Olive Oil", unit: "LTR", ordered: 25, pending: 20, unitPrice: 480, defaultTax: { name: "SGST", rate: 9 } },
+  { id: "m5", code: "RM-005", name: "Chicken Breast", unit: "KG", ordered: 100, pending: 50, unitPrice: 240, defaultTax: { name: "IGST", rate: 18 } },
 ];
 
 interface TaxEntry { id: string; taxTypeId: string; taxName: string; taxRate: number; }
 
 interface MaterialRow {
   id: string; materialId: string; code: string; name: string; unit: string;
-  orderedQty: number; acceptedQty: number; batchName: string;
+  orderedQty: number; pendingQty: number; acceptedQty: number; batchName: string;
   poUnitPrice: number; invoiceUnitPrice: number;
   taxes: TaxEntry[]; totalTaxAmount: number; lineTotal: number; totalLineAmount: number;
   hasError: boolean; shortReason: string; shortRemarks: string;
@@ -89,7 +85,7 @@ function recalcRow(row: MaterialRow): MaterialRow {
   const totalTaxPct = row.taxes.reduce((s, t) => s + t.taxRate, 0);
   const totalTaxAmount = lineTotal * (totalTaxPct / 100);
   const totalLineAmount = lineTotal + totalTaxAmount;
-  const hasError = row.acceptedQty > row.orderedQty;
+  const hasError = row.acceptedQty > row.pendingQty;
   return { ...row, lineTotal, totalTaxAmount, totalLineAmount, hasError };
 }
 
@@ -102,9 +98,10 @@ export default function ReceiveOrder() {
   const [materials, setMaterials] = useState<MaterialRow[]>(() =>
     MOCK_MATERIALS.slice(0, 3).map((m) => recalcRow({
       id: crypto.randomUUID(), materialId: m.id, code: m.code, name: m.name, unit: m.unit,
-      orderedQty: m.pending, acceptedQty: m.pending, batchName: "",
+      orderedQty: m.ordered, pendingQty: m.pending, acceptedQty: m.pending, batchName: "",
       poUnitPrice: m.unitPrice, invoiceUnitPrice: m.unitPrice,
-      taxes: [], totalTaxAmount: 0, lineTotal: 0, totalLineAmount: 0,
+      taxes: [{ id: crypto.randomUUID(), taxTypeId: "", taxName: m.defaultTax.name, taxRate: m.defaultTax.rate }],
+      totalTaxAmount: 0, lineTotal: 0, totalLineAmount: 0,
       hasError: false, shortReason: "", shortRemarks: "",
     }))
   );
@@ -118,7 +115,20 @@ export default function ReceiveOrder() {
   const receivingId = useMemo(() => "GRN-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
 
   const updateMaterial = useCallback((id: string, updates: Partial<MaterialRow>) => {
-    setMaterials((prev) => prev.map((r) => r.id === id ? recalcRow({ ...r, ...updates }) : r));
+    setMaterials((prev) => prev.map((r) => {
+      if (r.id !== id) return r;
+      const updated = { ...r, ...updates };
+      // Check excess: if acceptedQty > pendingQty, show error via toast and revert
+      if (updates.acceptedQty !== undefined && updates.acceptedQty > r.pendingQty) {
+        toast({
+          title: "Excess Quantity",
+          description: `Accepted quantity cannot exceed pending quantity (${r.pendingQty} ${r.unit}) for ${r.name}.`,
+          variant: "destructive",
+        });
+        return r;
+      }
+      return recalcRow(updated);
+    }));
   }, []);
 
   const addTaxToRow = () => {
@@ -142,10 +152,6 @@ export default function ReceiveOrder() {
     setTaxModalTypeId("");
   };
 
-  const removeTax = (rowId: string, taxId: string) => {
-    setMaterials((prev) => prev.map((r) => r.id === rowId ? recalcRow({ ...r, taxes: r.taxes.filter((t) => t.id !== taxId) }) : r));
-  };
-
   const addOtherCharge = (reason: string) => {
     setOtherCharges((prev) => [...prev, { id: crypto.randomUUID(), reason, value: 0, taxes: [] }]);
     setChargeSearch("");
@@ -158,15 +164,15 @@ export default function ReceiveOrder() {
 
   const totals = useMemo(() => {
     const totalAccepted = materials.reduce((s, r) => s + r.acceptedQty, 0);
-    const poTotal = materials.reduce((s, r) => s + r.orderedQty * r.poUnitPrice, 0);
+    const poTotal = materials.reduce((s, r) => s + r.pendingQty * r.poUnitPrice, 0);
     const invoiceSubtotal = materials.reduce((s, r) => s + r.lineTotal, 0);
     const totalTax = materials.reduce((s, r) => s + r.totalTaxAmount, 0);
     const grandTotal = invoiceSubtotal + totalTax;
     return { totalAccepted, poTotal, invoiceSubtotal, totalTax, grandTotal };
   }, [materials]);
 
-  const shortItems = materials.filter((m) => m.acceptedQty < m.orderedQty);
-  const canSubmit = materials.some((r) => r.acceptedQty > 0) && materials.length > 0;
+  const shortItems = materials.filter((m) => m.acceptedQty < m.pendingQty);
+  const canSubmit = materials.some((r) => r.acceptedQty > 0) && materials.length > 0 && !materials.some((r) => r.hasError);
 
   if (!order) {
     return (
@@ -230,13 +236,14 @@ export default function ReceiveOrder() {
             <h3 className="cento-section-header">Material Receiving</h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[1000px]">
+            <table className="w-full text-sm min-w-[1100px]">
               <thead>
                 <tr className="bg-muted/30 border-b border-border">
                   <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Code</th>
                   <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Material Name</th>
                   <th className="px-4 py-2.5 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Unit</th>
                   <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Ordered</th>
+                  <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Pending</th>
                   <th className="px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Accepted</th>
                   <th className="px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Batch</th>
                   <th className="px-4 py-2.5 text-right text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Invoice Price</th>
@@ -252,9 +259,13 @@ export default function ReceiveOrder() {
                     <td className="px-4 py-3 font-medium text-foreground">{row.name}</td>
                     <td className="px-4 py-3 text-muted-foreground text-xs">{row.unit}</td>
                     <td className="px-4 py-3 text-muted-foreground text-right tabular-nums">{row.orderedQty}</td>
+                    <td className="px-4 py-3 text-amber-700 text-right tabular-nums font-medium">{row.pendingQty}</td>
                     <td className="px-4 py-3">
-                      <Input type="number" min={0} value={row.acceptedQty || ""} onChange={(e) => updateMaterial(row.id, { acceptedQty: parseFloat(e.target.value) || 0 })}
+                      <Input type="number" min={0} max={row.pendingQty} value={row.acceptedQty || ""} onChange={(e) => updateMaterial(row.id, { acceptedQty: parseFloat(e.target.value) || 0 })}
                         className={cn("h-8 text-sm text-right bg-card w-24", row.hasError && "border-destructive")} />
+                      {row.hasError && (
+                        <p className="text-[10px] text-destructive mt-1">Cannot exceed pending ({row.pendingQty})</p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <Input type="text" value={row.batchName} onChange={(e) => updateMaterial(row.id, { batchName: e.target.value })} placeholder="Optional" className="h-8 text-xs bg-card w-28" />
@@ -267,7 +278,6 @@ export default function ReceiveOrder() {
                         {row.taxes.map((t) => (
                           <span key={t.id} className="inline-flex items-center gap-1 rounded-md bg-secondary border border-border px-2 py-0.5 text-xs font-medium text-foreground w-fit">
                             {t.taxName} {t.taxRate}%
-                            <button onClick={() => removeTax(row.id, t.id)} className="ml-0.5 text-muted-foreground hover:text-foreground"><X className="h-2.5 w-2.5" /></button>
                           </span>
                         ))}
                         <button className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors w-fit py-0.5 px-2 rounded border border-primary/20 hover:bg-primary/5"
@@ -294,12 +304,12 @@ export default function ReceiveOrder() {
             </div>
             <div className="space-y-4">
               {shortItems.map((item) => {
-                const shortQty = item.orderedQty - item.acceptedQty;
+                const shortQty = item.pendingQty - item.acceptedQty;
                 return (
                   <div key={item.id} className="bg-background/80 rounded-lg border border-border/60 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium">{item.name}</span>
-                      <span className="text-xs text-muted-foreground">Short: <span className="font-semibold text-amber-700">{shortQty}</span></span>
+                      <span className="text-xs text-muted-foreground">Short: <span className="font-semibold text-amber-700">{shortQty}</span> (of {item.pendingQty} pending)</span>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>

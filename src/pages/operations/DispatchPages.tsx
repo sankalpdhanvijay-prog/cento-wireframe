@@ -226,7 +226,7 @@ export default function ViewDispatchDetails() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold">Dispatch Details</CardTitle>
-            <Badge variant="outline" className={`text-xs px-3 py-1 ${dispatch.status === "Closed" ? "border-green-200 text-green-700 bg-green-50" : "border-amber-200 text-amber-700 bg-amber-50"}`}>{dispatch.status}</Badge>
+            <Badge variant="outline" className={`text-xs px-3 py-1 ${dispatch.status === "Closed" ? "border-green-200 text-green-700 bg-green-50" : dispatch.status === "Closed (Partial)" ? "border-blue-200 text-blue-700 bg-blue-50" : "border-amber-200 text-amber-700 bg-amber-50"}`}>{dispatch.status}</Badge>
           </div>
         </CardHeader>
         <CardContent>

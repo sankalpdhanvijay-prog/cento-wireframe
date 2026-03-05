@@ -1,16 +1,26 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog as DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useDispatchStore } from "@/context/DispatchStoreContext";
-import { ConfirmationModal } from "@/components/ConfirmationModal";
+
 import { toast } from "@/hooks/use-toast";
 
 const fmt = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+
+const STATUS_BADGE: Record<string, string> = {
+  "In Transit": "border-amber-200 text-amber-700 bg-amber-50",
+  "Closed": "border-green-200 text-green-700 bg-green-50",
+  "Closed (Partial)": "border-blue-200 text-blue-700 bg-blue-50",
+  "Deleted": "border-red-200 text-red-600 bg-red-50",
+};
 
 export default function Dispatches() {
   const navigate = useNavigate();
@@ -18,6 +28,7 @@ export default function Dispatches() {
   const [activeTab, setActiveTab] = useState<"new" | "all" | "deleted">("new");
   const [search, setSearch] = useState("");
   const [closeTarget, setCloseTarget] = useState<string | null>(null);
+  const [closeType, setCloseType] = useState<"full" | "partial">("full");
 
   const allDispatches = useMemo(() => dispatches.filter((d) => d.status !== "Deleted"), [dispatches]);
   const deletedDispatches = useMemo(() => dispatches.filter((d) => d.status === "Deleted"), [dispatches]);
@@ -42,8 +53,9 @@ export default function Dispatches() {
 
   const handleCloseDispatch = () => {
     if (closeTarget) {
-      updateDispatchStatus(closeTarget, "Closed");
-      toast({ title: "Dispatch Closed", description: `${closeTarget} has been closed.` });
+      const status = closeType === "partial" ? "Closed (Partial)" : "Closed";
+      updateDispatchStatus(closeTarget, status);
+      toast({ title: "Dispatch Closed", description: `${closeTarget} has been marked as ${status}.` });
     }
     setCloseTarget(null);
   };
@@ -74,10 +86,10 @@ export default function Dispatches() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                 <TableHead>Purchase ID</TableHead>
-78:                 <TableHead>Raised By</TableHead>
-79:                 <TableHead className="text-right">Total Value</TableHead>
-80:                 <TableHead>Purchase Date</TableHead>
+                <TableHead>Purchase ID</TableHead>
+                <TableHead>Raised By</TableHead>
+                <TableHead className="text-right">Total Value</TableHead>
+                <TableHead>Purchase Date</TableHead>
                 <TableHead>Expected Delivery</TableHead>
                 <TableHead>Last Updated</TableHead>
               </TableRow>
@@ -112,7 +124,7 @@ export default function Dispatches() {
                 <TableHead>GDN ID</TableHead>
                 <TableHead>Dispatch Date</TableHead>
                 <TableHead>Deliver To</TableHead>
-                 <TableHead>Purchase ID</TableHead>
+                <TableHead>Purchase ID</TableHead>
                 <TableHead>GRN ID</TableHead>
                 <TableHead>Invoice ID</TableHead>
                 <TableHead className="text-right">Invoice Amount</TableHead>
@@ -142,7 +154,7 @@ export default function Dispatches() {
                   <TableCell className="text-muted-foreground">{d.invoiceId ?? "—"}</TableCell>
                   <TableCell className="text-right">{d.invoiceAmount ? fmt(d.invoiceAmount) : "—"}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", d.status === "Closed" ? "border-green-200 text-green-700 bg-green-50" : "border-amber-200 text-amber-700 bg-amber-50")}>
+                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", STATUS_BADGE[d.status] || "")}>
                       {d.status}
                     </Badge>
                   </TableCell>
@@ -182,14 +194,35 @@ export default function Dispatches() {
         </div>
       )}
 
-      <ConfirmationModal
-        open={!!closeTarget}
-        onOpenChange={() => setCloseTarget(null)}
-        title="Close Dispatch Confirmation"
-        description="Clicking on Confirm will close this dispatch and mark it as completed."
-        onConfirm={handleCloseDispatch}
-        confirmLabel="Confirm"
-      />
+      {/* Close modal with full/partial choice */}
+      <DialogRoot open={!!closeTarget} onOpenChange={(v) => { if (!v) setCloseTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Close Dispatch</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">How would you like to close this dispatch?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCloseType("full")}
+                className={cn("flex-1 rounded-lg border-2 p-3 text-left transition-all", closeType === "full" ? "border-primary bg-cento-yellow-tint" : "border-border hover:border-primary/40")}
+              >
+                <p className="text-sm font-medium">Closed (Fully)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">All items received completely</p>
+              </button>
+              <button
+                onClick={() => setCloseType("partial")}
+                className={cn("flex-1 rounded-lg border-2 p-3 text-left transition-all", closeType === "partial" ? "border-primary bg-cento-yellow-tint" : "border-border hover:border-primary/40")}
+              >
+                <p className="text-sm font-medium">Closed (Partial)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Some items still pending</p>
+              </button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloseTarget(null)}>Cancel</Button>
+            <Button variant="cento" onClick={handleCloseDispatch}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </DialogRoot>
     </div>
   );
 }
