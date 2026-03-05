@@ -2,12 +2,11 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Pencil } from "lucide-react";
+import { Search, Pencil, Eye } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-// --- Mock Data ---
 const MOCK_TEMPLATES = [
   { id: "tmpl-1", name: "Weekly Kitchen Audit", compliance: true, createdBy: "Admin", createdOn: "2025-12-01" },
   { id: "tmpl-2", name: "Monthly Inventory Count", compliance: false, createdBy: "Manager", createdOn: "2025-11-20" },
@@ -85,7 +84,6 @@ export default function Audits() {
         <Button variant="cento" onClick={() => navigate("/audits/new")}>New Audit</Button>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-3">
         <button onClick={() => setMainTab("templates")} className={cn("px-4 py-1.5 text-xs font-medium rounded-lg border-2 transition-all", mainTab === "templates" ? "border-primary bg-cento-yellow-tint text-foreground shadow-sm" : "border-dashed border-border text-muted-foreground hover:border-primary/40 hover:text-foreground")}>
           Templates
@@ -99,13 +97,11 @@ export default function Audits() {
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative w-72">
         <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
         <Input placeholder="Search..." className="pl-8 h-9 text-xs bg-card" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
-      {/* Templates Tab */}
       {mainTab === "templates" && (
         <div className="cento-card p-0 overflow-hidden">
           <Table>
@@ -143,58 +139,52 @@ export default function Audits() {
         </div>
       )}
 
-      {/* Status Tabs */}
       {mainTab === "status" && (
         <div className="cento-card p-0 overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                {statusTab === "Draft" && (<>
-                  <TableHead>Audit ID</TableHead><TableHead>Created By</TableHead><TableHead>Created On</TableHead><TableHead>Action</TableHead>
-                </>)}
-                {statusTab === "InReview" && (<>
-                  <TableHead>Audit ID</TableHead><TableHead>Created At</TableHead><TableHead>Created By</TableHead><TableHead>Audit Date</TableHead><TableHead>Audit Time</TableHead><TableHead>Material Count</TableHead>
-                </>)}
-                {statusTab === "Closed" && (<>
-                  <TableHead>Audit ID</TableHead><TableHead>Created By</TableHead><TableHead>Created On</TableHead><TableHead>Action</TableHead>
-                </>)}
-                {statusTab === "Rejected" && (<>
-                  <TableHead>Audit ID</TableHead><TableHead>Created By</TableHead><TableHead>Created On</TableHead><TableHead>Action</TableHead>
-                </>)}
+                <TableHead>Audit ID</TableHead>
+                <TableHead>Created By</TableHead>
+                <TableHead>Created On</TableHead>
+                {statusTab === "InReview" && (
+                  <>
+                    <TableHead>Audit Date</TableHead>
+                    <TableHead>Audit Time</TableHead>
+                    <TableHead>Material Count</TableHead>
+                  </>
+                )}
+                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAudits.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No audits found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={statusTab === "InReview" ? 7 : 4} className="text-center py-12 text-muted-foreground">No audits found.</TableCell></TableRow>
               ) : filteredAudits.map((a) => (
-                <TableRow
-                  key={a.id}
-                  className="cento-row-clickable"
-                  onClick={() => navigate(`/audits/${a.id}`, { state: { audit: a } })}
-                >
+                <TableRow key={a.id} className="hover:bg-muted/20">
                   <TableCell className="font-medium text-primary">{a.id}</TableCell>
-                  {statusTab === "Draft" && (<>
-                    <TableCell>{a.createdBy}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.createdOn}</TableCell>
-                    <TableCell><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></TableCell>
-                  </>)}
-                  {statusTab === "InReview" && (<>
-                    <TableCell className="text-muted-foreground">{a.createdOn}</TableCell>
-                    <TableCell>{a.createdBy}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.auditDate ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.auditTime ?? "—"}</TableCell>
-                    <TableCell>{a.materialCount ?? 0}</TableCell>
-                  </>)}
-                  {statusTab === "Closed" && (<>
-                    <TableCell>{a.createdBy}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.createdOn}</TableCell>
-                    <TableCell><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></TableCell>
-                  </>)}
-                  {statusTab === "Rejected" && (<>
-                    <TableCell>{a.createdBy}</TableCell>
-                    <TableCell className="text-muted-foreground">{a.createdOn}</TableCell>
-                    <TableCell><Pencil className="h-3.5 w-3.5 text-muted-foreground" /></TableCell>
-                  </>)}
+                  <TableCell>{a.createdBy}</TableCell>
+                  <TableCell className="text-muted-foreground">{a.createdOn}</TableCell>
+                  {statusTab === "InReview" && (
+                    <>
+                      <TableCell className="text-muted-foreground">{a.auditDate ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{a.auditTime ?? "—"}</TableCell>
+                      <TableCell>{a.materialCount ?? 0}</TableCell>
+                    </>
+                  )}
+                  <TableCell>
+                    {statusTab === "Draft" ? (
+                      <Button variant="ghost" size="sm" className="text-xs h-7"
+                        onClick={() => navigate(`/audits/${a.id}`, { state: { audit: a } })}>
+                        <Pencil className="h-3 w-3 mr-1" /> Edit
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="text-xs h-7"
+                        onClick={() => navigate(`/audits/${a.id}`, { state: { audit: a } })}>
+                        <Eye className="h-3 w-3 mr-1" /> View Details
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

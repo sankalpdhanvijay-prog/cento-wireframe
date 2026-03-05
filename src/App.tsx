@@ -17,6 +17,7 @@ import NewPurchase from "./pages/procurements/NewPurchase";
 import Purchases from "./pages/procurements/Purchases";
 import Receivings from "./pages/procurements/Receivings";
 import ClosedOrders from "./pages/procurements/ClosedOrders";
+import ViewClosedOrderDetails from "./pages/procurements/orders/ViewClosedOrderDetails";
 import DirectReceiving from "./pages/procurements/receiving/DirectReceiving";
 import ReceiveOrder from "./pages/procurements/receiving/ReceiveOrder";
 import ViewReceivingOrder from "./pages/procurements/receiving/ViewReceivingOrder";
@@ -72,7 +73,7 @@ const App = () => (
                     <Route path="/procurements/receivings" element={<Receivings />} />
                     <Route path="/procurements/receivings/:id" element={<ViewReceivingDetail />} />
                     <Route path="/procurements/closed-orders" element={<ClosedOrders />} />
-                    <Route path="/procurements/closed-orders/:id" element={<ViewReceivingDetail />} />
+                    <Route path="/procurements/closed-orders/:id" element={<ViewClosedOrderDetails />} />
 
                     {/* Receiving flow routes */}
                     <Route path="/procurements/receiving/direct" element={<DirectReceiving />} />

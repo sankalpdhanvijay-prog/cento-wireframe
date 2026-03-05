@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Trash2 } from "lucide-react";
+import { Plus, Search, Trash2, Eye } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useProductionStore, type Production } from "@/context/ProductionStoreContext";
@@ -59,27 +59,30 @@ export default function Productions() {
               <TableHead>Production Date</TableHead>
               <TableHead>Produced By</TableHead>
               <TableHead className="text-right">Total Produced</TableHead>
-              <TableHead className="w-[100px]">Action</TableHead>
+              <TableHead className="w-[120px]">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No productions found.</TableCell></TableRow>
             ) : filtered.map((p) => (
-              <TableRow key={p.id} className="cento-row-clickable" onClick={() => navigate(`/operations/productions/${p.id}`)}>
+              <TableRow key={p.id} className="hover:bg-muted/20">
                 <TableCell className="font-medium text-primary">{p.id}</TableCell>
                 <TableCell className="font-medium">{p.productionPlan}</TableCell>
                 <TableCell className="text-muted-foreground">{p.productionDate}</TableCell>
                 <TableCell>{p.producedBy}</TableCell>
                 <TableCell className="text-right">{p.totalProduced}</TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  {!p.deleted ? (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteTarget(p)}>
-                      <Trash2 className="h-4 w-4" />
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/operations/productions/${p.id}`)}>
+                      <Eye className="h-3 w-3 mr-1" /> View
                     </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" className="h-7 text-xs px-3" onClick={() => navigate(`/operations/productions/${p.id}`)}>View</Button>
-                  )}
+                    {!p.deleted && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => setDeleteTarget(p)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

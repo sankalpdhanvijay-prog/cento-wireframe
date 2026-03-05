@@ -5,12 +5,11 @@ import {
   Dialog as DialogRoot, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Eye } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useDispatchStore } from "@/context/DispatchStoreContext";
-
 import { toast } from "@/hooks/use-toast";
 
 const fmt = (n: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
@@ -92,23 +91,26 @@ export default function Dispatches() {
                 <TableHead>Purchase Date</TableHead>
                 <TableHead>Expected Delivery</TableHead>
                 <TableHead>Last Updated</TableHead>
+                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredNew.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No new dispatches pending.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-12 text-muted-foreground">No new dispatches pending.</TableCell></TableRow>
               ) : filteredNew.map((d) => (
-                <TableRow
-                  key={d.requisitionId}
-                  className="cento-row-clickable"
-                  onClick={() => navigate(`/operations/dispatches/new-dispatch`, { state: { requisitionId: d.requisitionId, type: d.type } })}
-                >
+                <TableRow key={d.requisitionId} className="hover:bg-muted/20">
                   <TableCell className="font-medium text-primary">{d.requisitionId}</TableCell>
                   <TableCell>{d.raisedBy}</TableCell>
                   <TableCell className="text-right font-medium">{fmt(d.totalValue)}</TableCell>
                   <TableCell className="text-muted-foreground">{d.requisitionDate}</TableCell>
                   <TableCell className="text-muted-foreground">{d.expectedDeliveryDate}</TableCell>
                   <TableCell className="text-muted-foreground">{d.lastUpdated}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" className="text-xs h-7"
+                      onClick={() => navigate(`/operations/dispatches/new-dispatch`, { state: { requisitionId: d.requisitionId, type: d.type } })}>
+                      <Eye className="h-3 w-3 mr-1" /> View
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -129,23 +131,14 @@ export default function Dispatches() {
                 <TableHead>Invoice ID</TableHead>
                 <TableHead className="text-right">Invoice Amount</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredAll.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-12 text-muted-foreground">No dispatches found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center py-12 text-muted-foreground">No dispatches found.</TableCell></TableRow>
               ) : filteredAll.map((d) => (
-                <TableRow
-                  key={d.id}
-                  className="cento-row-clickable"
-                  onClick={() => {
-                    if (d.status === "In Transit") {
-                      setCloseTarget(d.id);
-                    } else {
-                      navigate(`/operations/dispatches/${d.id}`);
-                    }
-                  }}
-                >
+                <TableRow key={d.id} className="hover:bg-muted/20">
                   <TableCell className="font-medium text-primary">{d.id}</TableCell>
                   <TableCell className="text-muted-foreground">{d.dispatchDate}</TableCell>
                   <TableCell>{d.deliverTo}</TableCell>
@@ -157,6 +150,17 @@ export default function Dispatches() {
                     <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", STATUS_BADGE[d.status] || "")}>
                       {d.status}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {d.status === "In Transit" ? (
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setCloseTarget(d.id)}>
+                        Close
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/operations/dispatches/${d.id}`)}>
+                        <Eye className="h-3 w-3 mr-1" /> View
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -175,18 +179,24 @@ export default function Dispatches() {
                 <TableHead>Deliver To</TableHead>
                 <TableHead>Purchase ID</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="w-[100px]">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredDeleted.length === 0 ? (
-                <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground">No deleted dispatches.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={6} className="text-center py-12 text-muted-foreground">No deleted dispatches.</TableCell></TableRow>
               ) : filteredDeleted.map((d) => (
-                <TableRow key={d.id} className="cento-row-clickable" onClick={() => navigate(`/operations/dispatches/${d.id}`)}>
+                <TableRow key={d.id} className="hover:bg-muted/20">
                   <TableCell className="font-medium">{d.id}</TableCell>
                   <TableCell className="text-muted-foreground">{d.dispatchDate}</TableCell>
                   <TableCell>{d.deliverTo}</TableCell>
                   <TableCell>{d.requisitionId}</TableCell>
                   <TableCell><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-red-200 text-red-600 bg-red-50">Deleted</Badge></TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/operations/dispatches/${d.id}`)}>
+                      <Eye className="h-3 w-3 mr-1" /> View
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -194,24 +204,18 @@ export default function Dispatches() {
         </div>
       )}
 
-      {/* Close modal with full/partial choice */}
+      {/* Close modal */}
       <DialogRoot open={!!closeTarget} onOpenChange={(v) => { if (!v) setCloseTarget(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader><DialogTitle>Close Dispatch</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
             <p className="text-sm text-muted-foreground">How would you like to close this dispatch?</p>
             <div className="flex gap-2">
-              <button
-                onClick={() => setCloseType("full")}
-                className={cn("flex-1 rounded-lg border-2 p-3 text-left transition-all", closeType === "full" ? "border-primary bg-cento-yellow-tint" : "border-border hover:border-primary/40")}
-              >
+              <button onClick={() => setCloseType("full")} className={cn("flex-1 rounded-lg border-2 p-3 text-left transition-all", closeType === "full" ? "border-primary bg-cento-yellow-tint" : "border-border hover:border-primary/40")}>
                 <p className="text-sm font-medium">Closed (Fully)</p>
                 <p className="text-xs text-muted-foreground mt-0.5">All items received completely</p>
               </button>
-              <button
-                onClick={() => setCloseType("partial")}
-                className={cn("flex-1 rounded-lg border-2 p-3 text-left transition-all", closeType === "partial" ? "border-primary bg-cento-yellow-tint" : "border-border hover:border-primary/40")}
-              >
+              <button onClick={() => setCloseType("partial")} className={cn("flex-1 rounded-lg border-2 p-3 text-left transition-all", closeType === "partial" ? "border-primary bg-cento-yellow-tint" : "border-border hover:border-primary/40")}>
                 <p className="text-sm font-medium">Closed (Partial)</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Some items still pending</p>
               </button>
