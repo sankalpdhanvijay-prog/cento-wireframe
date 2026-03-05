@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Search } from "lucide-react";
+import { Plus, Trash2, Search, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
@@ -47,6 +47,8 @@ export default function Transfers() {
     if (deleteTarget) deleteTransfer(deleteTarget.id);
     setDeleteTarget(null);
   };
+
+  const isDrafted = tab === "drafted";
 
   return (
     <div className="space-y-4 max-w-[1200px]">
@@ -94,7 +96,7 @@ export default function Transfers() {
                     {key === "drafted" && <TableHead>Last Updated</TableHead>}
                     {key === "cancelled" && <TableHead>Cancelled Date</TableHead>}
                     {key === "cancelled" && <TableHead>Cancelled By</TableHead>}
-                    <TableHead className="w-[48px]" />
+                    <TableHead className="w-[120px]">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -106,11 +108,7 @@ export default function Transfers() {
                     </TableRow>
                   ) : (
                     rows.map((row) => (
-                      <TableRow
-                        key={row.id}
-                        className="cento-row-clickable"
-                        onClick={() => navigate(`/operations/transfers/${row.id}`)}
-                      >
+                      <TableRow key={row.id} className="hover:bg-muted/20">
                         <TableCell className="font-medium text-primary">{row.id}</TableCell>
                         <TableCell>{row.senderOutlet}</TableCell>
                         <TableCell className="text-muted-foreground">{row.buyerOutlet}</TableCell>
@@ -122,14 +120,22 @@ export default function Transfers() {
                         {key === "drafted" && <TableCell className="text-muted-foreground">{row.lastUpdated ?? "—"}</TableCell>}
                         {key === "cancelled" && <TableCell className="text-muted-foreground">{row.cancelledDate}</TableCell>}
                         {key === "cancelled" && <TableCell>{row.cancelledBy}</TableCell>}
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost" size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => setDeleteTarget(row)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" className="text-xs h-7"
+                              onClick={() => navigate(`/operations/transfers/${row.id}`)}>
+                              <Eye className="h-3 w-3 mr-1" /> View Details
+                            </Button>
+                            {key === "drafted" && (
+                              <Button
+                                variant="ghost" size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                onClick={() => setDeleteTarget(row)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

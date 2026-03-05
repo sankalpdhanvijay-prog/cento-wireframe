@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { ArrowLeft, CheckCircle2, XCircle, Pencil, Lock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Pencil, Lock, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
 // Reuse the same mock structure as Receivings.tsx for detail lookup
@@ -15,6 +15,7 @@ interface GRNMaterial {
   receivedQty: number;
   pendingQty: number;
   unitPrice: number;
+  taxPercent?: number;
   taxAmount: number;
   total: number;
   shortReason?: string;
@@ -69,8 +70,8 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     expectedDelivery: "2026-02-15",
     status: "Partially Received",
     materials: [
-      { name: "Basmati Rice", orderedQty: 100, receivedQty: 95, pendingQty: 5, unitPrice: 85, taxAmount: 403.75, total: 8478.75, shortReason: "Short Supply", shortRemarks: "Vendor shortage" },
-      { name: "Olive Oil (Extra Virgin)", orderedQty: 50, receivedQty: 50, pendingQty: 0, unitPrice: 420, taxAmount: 2520, total: 23520 },
+      { name: "Basmati Rice", orderedQty: 100, receivedQty: 95, pendingQty: 5, unitPrice: 85, taxPercent: 5, taxAmount: 403.75, total: 8478.75, shortReason: "Short Supply", shortRemarks: "Vendor shortage" },
+      { name: "Olive Oil (Extra Virgin)", orderedQty: 50, receivedQty: 50, pendingQty: 0, unitPrice: 420, taxPercent: 12, taxAmount: 2520, total: 23520 },
     ],
     subtotal: 29632.75,
     totalTax: 2923.75,
@@ -91,7 +92,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     poCreatedOn: "2026-02-09",
     status: "Received",
     materials: [
-      { name: "Cumin Powder", orderedQty: 45, receivedQty: 45, pendingQty: 0, unitPrice: 194, taxAmount: 875, total: 8750 },
+      { name: "Cumin Powder", orderedQty: 45, receivedQty: 45, pendingQty: 0, unitPrice: 194, taxPercent: 18, taxAmount: 875, total: 8750 },
     ],
     subtotal: 7875,
     totalTax: 875,
@@ -113,7 +114,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     poCreatedOn: "2026-01-15",
     status: "Received",
     materials: [
-      { name: "Mozzarella Cheese", orderedQty: 80, receivedQty: 80, pendingQty: 0, unitPrice: 360, taxAmount: 3456, total: 28800 },
+      { name: "Mozzarella Cheese", orderedQty: 80, receivedQty: 80, pendingQty: 0, unitPrice: 360, taxPercent: 12, taxAmount: 3456, total: 28800 },
     ],
     subtotal: 25344,
     totalTax: 3456,
@@ -132,9 +133,10 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     receivedBy: "—",
     poCreatedBy: "Sona R.",
     poCreatedOn: "2026-02-07",
+    cancelledBy: "Admin",
     status: "Drafted",
     materials: [
-      { name: "Onion (Red)", orderedQty: 30, receivedQty: 0, pendingQty: 30, unitPrice: 140, taxAmount: 0, total: 4200 },
+      { name: "Onion (Red)", orderedQty: 30, receivedQty: 0, pendingQty: 30, unitPrice: 140, taxPercent: 0, taxAmount: 0, total: 4200 },
     ],
     subtotal: 4200,
     totalTax: 0,
@@ -158,8 +160,8 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     lastUpdated: "2026-02-11",
     status: "Partially Received",
     materials: [
-      { name: "Cream 5L", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxAmount: 2916, total: 27000 },
-      { name: "Butter 1kg", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxAmount: 2916, total: 27000 },
+      { name: "Cream 5L", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000 },
+      { name: "Butter 1kg", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000 },
     ],
     subtotal: 48168,
     totalTax: 5832,
@@ -182,7 +184,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     cancelledBy: "Admin",
     status: "Cancelled",
     materials: [
-      { name: "Black Pepper", orderedQty: 60, receivedQty: 0, pendingQty: 60, unitPrice: 200, taxAmount: 0, total: 12000 },
+      { name: "Black Pepper", orderedQty: 60, receivedQty: 0, pendingQty: 60, unitPrice: 200, taxPercent: 0, taxAmount: 0, total: 12000 },
     ],
     subtotal: 12000,
     totalTax: 0,
@@ -201,6 +203,9 @@ const STATUS_COLOR: Record<string, string> = {
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
+const fmtDecimal = (n: number) =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+
 export { MOCK_GRN_DETAILS };
 export type { GRNDetail };
 
@@ -210,6 +215,7 @@ export default function ViewReceivingDetail() {
   const { pathname } = useLocation();
   const isClosedOrder = pathname.startsWith("/procurements/closed-orders");
   const [confirmAction, setConfirmAction] = useState<{ action: string; title: string; description: string } | null>(null);
+  const [taxBreakdownOpen, setTaxBreakdownOpen] = useState(false);
 
   const grn = MOCK_GRN_DETAILS.find((g) => g.id === id);
 
@@ -227,6 +233,15 @@ export default function ViewReceivingDetail() {
   const isPartial = grn.status === "Partially Received";
   const shortItems = grn.materials.filter((m) => m.shortReason);
   const excessItems = grn.materials.filter((m) => m.excessReason);
+
+  // Build tax bifurcation from materials
+  const taxBifurcation: Record<string, number> = {};
+  grn.materials.forEach((m) => {
+    if (m.taxAmount > 0) {
+      const label = m.taxPercent ? `GST ${m.taxPercent}%` : "Tax";
+      taxBifurcation[label] = (taxBifurcation[label] ?? 0) + m.taxAmount;
+    }
+  });
 
   const executeAction = (action: string) => {
     switch (action) {
@@ -247,11 +262,23 @@ export default function ViewReceivingDetail() {
     else executeAction(action);
   };
 
+  const handleExport = () => {
+    const blob = new Blob([`Receiving Details: ${grn.grnId}\nVendor: ${grn.vendor}\nOutlet: ${grn.outlet}\nTotal: ${fmt(grn.grandTotal)}`], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `${grn.grnId}-details.txt`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-5 max-w-[1000px] pb-28">
-      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
-      </Button>
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground -ml-2" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back
+        </Button>
+        <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={handleExport}>
+          <Download className="h-3.5 w-3.5" /> Export
+        </Button>
+      </div>
 
       {/* SECTION 1: Receiving Details */}
       <Card>
@@ -264,7 +291,6 @@ export default function ViewReceivingDetail() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Upper row */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
             <DetailField label="GRN ID" value={grn.grnId} highlight />
             <DetailField label="Vendor Name" value={grn.vendor} />
@@ -274,7 +300,6 @@ export default function ViewReceivingDetail() {
             <DetailField label="Received On" value={grn.receivingDate} />
           </div>
           <Separator />
-          {/* Lower row */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
             <DetailField label="Received By" value={grn.receivedBy} />
             <DetailField label="Current Status" value={grn.status} />
@@ -371,7 +396,7 @@ export default function ViewReceivingDetail() {
         </Card>
       )}
 
-      {/* SECTION 3: Receiving Summary */}
+      {/* SECTION 3: Receiving Summary with Tax Bifurcation */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold">Receiving Summary</CardTitle>
@@ -379,7 +404,33 @@ export default function ViewReceivingDetail() {
         <CardContent>
           <div className="space-y-2.5">
             <SummaryRow label="Invoice Subtotal" value={fmt(grn.subtotal)} />
-            <SummaryRow label="Total Tax" value={fmt(grn.totalTax)} />
+            {/* Total Tax with collapsible bifurcation */}
+            <div>
+              <div
+                className="flex items-center justify-between cursor-pointer group"
+                onClick={() => Object.keys(taxBifurcation).length > 0 && setTaxBreakdownOpen(!taxBreakdownOpen)}
+              >
+                <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  Total Tax
+                  {Object.keys(taxBifurcation).length > 0 && (
+                    taxBreakdownOpen
+                      ? <ChevronUp className="h-3 w-3 text-muted-foreground" />
+                      : <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                  )}
+                </span>
+                <span className="text-sm">{fmt(grn.totalTax)}</span>
+              </div>
+              {taxBreakdownOpen && Object.keys(taxBifurcation).length > 0 && (
+                <div className="ml-4 mt-1.5 space-y-1 border-l-2 border-muted pl-3">
+                  {Object.entries(taxBifurcation).map(([label, amount]) => (
+                    <div key={label} className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{label}</span>
+                      <span>{fmtDecimal(amount)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <Separator />
             <SummaryRow label="Grand Total" value={fmt(grn.grandTotal)} bold />
           </div>
