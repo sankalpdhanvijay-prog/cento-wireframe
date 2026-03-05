@@ -104,6 +104,7 @@ const MOCK_FULFILLED: FulfilledRow[] = [
   { id: "f1", grnId: "GRN-2026-001", supplier: "Sysco Foods", requisitionId: "PO-1005", dispatchId: "DSP-001", receivedBy: "Ankit", receivedOn: "2026-01-28", amount: 14200 },
   { id: "f2", grnId: "GRN-2026-003", supplier: "US Foods", requisitionId: "PO-1007", dispatchId: "DSP-003", receivedBy: "Raj", receivedOn: "2026-02-03", amount: 30500 },
   { id: "f3", grnId: "GRN-2026-004", supplier: "Metro Supply", requisitionId: "PO-1003", dispatchId: "DSP-005", receivedBy: "Ankit", receivedOn: "2026-02-08", amount: 33490 },
+  { id: "f4", grnId: "GRN-2026-005", supplier: "Main Kitchen", requisitionId: "TO-2005", dispatchId: "DSP-010", receivedBy: "Meera", receivedOn: "2026-02-10", amount: 18000 },
 ];
 
 const fmt = (n: number) =>
@@ -123,7 +124,7 @@ export default function Receivings() {
   const [search, setSearch] = useState("");
   const [outlet, setOutlet] = useState("all");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [closeTarget, setCloseTarget] = useState<FulfilledRow | null>(null);
+  const [closeTarget, setCloseTarget] = useState<OrderRow | null>(null);
 
   const toggle = (id: string) => setExpanded((p) => ({ ...p, [id]: !p[id] }));
 
@@ -154,6 +155,13 @@ export default function Receivings() {
       navigate("/procurements/closed-orders");
     }
     setCloseTarget(null);
+  };
+
+  const getRequisitionDetailRoute = (row: FulfilledRow) => {
+    if (row.requisitionId.startsWith("TO-")) {
+      return `/operations/transfers/${row.requisitionId}`;
+    }
+    return `/procurements/purchases/${row.requisitionId}`;
   };
 
   return (
@@ -199,12 +207,12 @@ export default function Receivings() {
 
         {/* Pending Tab */}
         <TabsContent value="pending" className="mt-0">
-          <PendingSections orders={pendingOrders} expanded={expanded} toggle={toggle} navigate={navigate} />
+          <PendingSections orders={pendingOrders} expanded={expanded} toggle={toggle} navigate={navigate} onClose={(order) => setCloseTarget(order)} />
         </TabsContent>
 
         {/* All Receivings Tab */}
         <TabsContent value="fulfilled" className="mt-0">
-          <FulfilledTable rows={filteredFulfilled} onClose={(row) => setCloseTarget(row)} navigate={navigate} />
+          <FulfilledTable rows={filteredFulfilled} navigate={navigate} />
         </TabsContent>
       </Tabs>
 
@@ -212,7 +220,7 @@ export default function Receivings() {
         open={!!closeTarget}
         onOpenChange={() => setCloseTarget(null)}
         title="Close Order"
-        description={`Clicking on Confirm will close the order for ${closeTarget?.grnId} and move it to Closed Orders.`}
+        description={`Clicking on Confirm will close the order for ${closeTarget?.orderId} and move it to Closed Orders.`}
         onConfirm={handleCloseConfirm}
         confirmLabel="Confirm Close"
       />
@@ -221,11 +229,12 @@ export default function Receivings() {
 }
 
 /* ─── Pending Sections ─── */
-function PendingSections({ orders, expanded, toggle, navigate }: {
+function PendingSections({ orders, expanded, toggle, navigate, onClose }: {
   orders: OrderRow[];
   expanded: Record<string, boolean>;
   toggle: (id: string) => void;
   navigate: ReturnType<typeof useNavigate>;
+  onClose: (order: OrderRow) => void;
 }) {
   if (orders.length === 0) {
     return (
@@ -313,11 +322,17 @@ function PendingSections({ orders, expanded, toggle, navigate }: {
                 {/* CTAs */}
                 <div className="flex items-center gap-2 shrink-0 pt-1" onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="sm" className="text-xs h-7"
-                    onClick={() => navigate(`/procurements/purchases/${order.orderId}`)}>
+                    onClick={() => {
+                      if (order.orderType === "Transfer") {
+                        navigate(`/operations/transfers/${order.orderId}`);
+                      } else {
+                        navigate(`/procurements/purchases/${order.orderId}`);
+                      }
+                    }}>
                     <Eye className="h-3 w-3 mr-1" /> View Details
                   </Button>
                   <Button variant="outline" size="sm" className="text-xs h-7"
-                    onClick={() => navigate("/procurements/closed-orders")}>
+                    onClick={() => onClose(order)}>
                     Close
                   </Button>
                   {order.orderType === "Vendor" && (
@@ -369,7 +384,14 @@ function PendingSections({ orders, expanded, toggle, navigate }: {
                               </Button>
                             ) : (
                               <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2"
-                                onClick={() => navigate(`/procurements/receiving/view/${order.id}?entry=${entry.id}`)}>
+                                onClick={() => {
+                                  // GDN entries (Outlet/Transfer) → dispatch detail; PO entries → receiving detail
+                                  if (entry.requisitionId.startsWith("GDN-")) {
+                                    navigate(`/operations/dispatches/${entry.requisitionId}`);
+                                  } else {
+                                    navigate(`/procurements/receiving/view/${order.id}?entry=${entry.id}`);
+                                  }
+                                }}>
                                 <Eye className="h-3 w-3 mr-1" /> View
                               </Button>
                             )}
@@ -389,11 +411,17 @@ function PendingSections({ orders, expanded, toggle, navigate }: {
 }
 
 /* ─── All Receivings Table ─── */
-function FulfilledTable({ rows, onClose, navigate }: {
+function FulfilledTable({ rows, navigate }: {
   rows: FulfilledRow[];
-  onClose: (row: FulfilledRow) => void;
   navigate: ReturnType<typeof useNavigate>;
 }) {
+  const getDetailRoute = (row: FulfilledRow) => {
+    if (row.requisitionId.startsWith("TO-")) {
+      return `/operations/transfers/${row.requisitionId}`;
+    }
+    return `/procurements/purchases/${row.requisitionId}`;
+  };
+
   return (
     <div className="cento-card p-0 overflow-hidden">
       <Table>
@@ -422,8 +450,8 @@ function FulfilledTable({ rows, onClose, navigate }: {
               <TableCell className="text-muted-foreground">{format(new Date(row.receivedOn), "dd MMM yyyy")}</TableCell>
               <TableCell className="text-right font-medium">{fmt(row.amount)}</TableCell>
               <TableCell>
-                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => onClose(row)}>
-                  Close
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(getDetailRoute(row))}>
+                  <Eye className="h-3 w-3 mr-1" /> View Details
                 </Button>
               </TableCell>
             </TableRow>
