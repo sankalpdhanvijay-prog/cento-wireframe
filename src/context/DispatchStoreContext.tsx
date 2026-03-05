@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { format } from "date-fns";
 
-export type DispatchStatus = "In Transit" | "Closed" | "Deleted";
+export type DispatchStatus = "In Transit" | "Closed" | "Closed (Partial)" | "Deleted";
 
 export interface DispatchLineItem {
   name: string;
@@ -72,7 +72,7 @@ const SEED_DISPATCHES: DispatchOrder[] = [
   },
   {
     id: "GDN-3003", requisitionId: "TO-2005", type: "TO", deliverTo: "Central Warehouse",
-    dispatchDate: "2026-01-30", grnId: "GRN-003", invoiceId: "INV-503", invoiceAmount: 18000, status: "Closed",
+    dispatchDate: "2026-01-30", grnId: "GRN-003", invoiceId: "INV-503", invoiceAmount: 18000, status: "Closed (Partial)",
     createdBy: "Admin",
     materials: [
       { name: "Basmati Rice 25kg", dispatchQty: 50, unitPrice: 200, taxPct: 0, lineTotal: 10000 },

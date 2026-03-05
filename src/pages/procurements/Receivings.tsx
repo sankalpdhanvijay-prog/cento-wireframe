@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, ChevronDown, ChevronRight, MapPin, Eye } from "lucide-react";
+import { Plus, Search, ChevronDown, ChevronRight, MapPin, Eye, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -12,6 +12,7 @@ import {
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
 /* ─── Mock Data ─── */
@@ -20,6 +21,7 @@ const MOCK_OUTLETS = [
   { id: "o1", name: "Main Kitchen" },
   { id: "o2", name: "Branch - Indiranagar" },
   { id: "o3", name: "Branch - Koramangala" },
+  { id: "o4", name: "Central Warehouse" },
 ];
 
 export type OrderType = "Vendor" | "Outlet" | "Transfer";
@@ -27,6 +29,7 @@ export type OrderType = "Vendor" | "Outlet" | "Transfer";
 export interface ReceivingEntry {
   id: string;
   requisitionId: string; // GDN ID or PO ID
+  receivingId: string | null; // GRN ID or null
   receivingQty: number;
   orderAmount: number;
   invoiceAmount: number;
@@ -62,36 +65,48 @@ export interface FulfilledRow {
 }
 
 const MOCK_ORDERS: OrderRow[] = [
+  // 1) PO Vendor, no receivings
   {
-    id: "or1", orderId: "PO-1005", orderType: "Vendor", supplier: "Sysco Foods", outlet: "Main Kitchen",
-    orderedAt: "2026-01-20", expectedDelivery: "2026-02-01", orderedQty: 310, receivedQty: 180, pendingQty: 130, orderAmount: 44800,
+    id: "or1", orderId: "PO-1010", orderType: "Vendor", supplier: "Sysco Foods", outlet: "Main Kitchen",
+    orderedAt: "2026-02-15", expectedDelivery: "2026-02-25", orderedQty: 200, receivedQty: 0, pendingQty: 200, orderAmount: 38000,
+    receivings: [],
+  },
+  // 2) PO Vendor, 3 receivings, 60% pending
+  {
+    id: "or2", orderId: "PO-1005", orderType: "Vendor", supplier: "US Foods", outlet: "Main Kitchen",
+    orderedAt: "2026-01-20", expectedDelivery: "2026-02-01", orderedQty: 500, receivedQty: 200, pendingQty: 300, orderAmount: 72000,
     receivings: [
-      { id: "re1", requisitionId: "PO-1005", receivingQty: 100, orderAmount: 14400, invoiceAmount: 14200, creationDate: "2026-01-25", createdBy: "Ankit", receivingDate: "2026-01-28" },
-      { id: "re2", requisitionId: "PO-1005", receivingQty: 80, orderAmount: 11520, invoiceAmount: 11520, creationDate: "2026-01-30", createdBy: "Meera", receivingDate: null },
+      { id: "re1", requisitionId: "PO-1005", receivingId: "GRN-2026-010", receivingQty: 80, orderAmount: 11520, invoiceAmount: 11400, creationDate: "2026-01-25", createdBy: "Ankit", receivingDate: "2026-01-28" },
+      { id: "re2", requisitionId: "PO-1005", receivingId: "GRN-2026-011", receivingQty: 70, orderAmount: 10080, invoiceAmount: 10080, creationDate: "2026-01-30", createdBy: "Meera", receivingDate: "2026-02-01" },
+      { id: "re3", requisitionId: "PO-1005", receivingId: null, receivingQty: 50, orderAmount: 7200, invoiceAmount: 7200, creationDate: "2026-02-05", createdBy: "Raj", receivingDate: null },
     ],
   },
-  {
-    id: "or2", orderId: "PO-1007", orderType: "Vendor", supplier: "US Foods", outlet: "Main Kitchen",
-    orderedAt: "2026-01-10", expectedDelivery: "2026-02-05", orderedQty: 250, receivedQty: 180, pendingQty: 70, orderAmount: 42560,
-    receivings: [
-      { id: "re3", requisitionId: "PO-1007", receivingQty: 180, orderAmount: 30643, invoiceAmount: 30500, creationDate: "2026-02-01", createdBy: "Raj", receivingDate: "2026-02-03" },
-    ],
-  },
+  // 3) PO Outlet, 2 dispatches with GRN + 1 most recent GDN without GRN
   {
     id: "or3", orderId: "PO-1008", orderType: "Outlet", supplier: "Fresh Direct", outlet: "Central Warehouse",
-    orderedAt: "2026-01-08", expectedDelivery: "2026-02-03", orderedQty: 100, receivedQty: 0, pendingQty: 100, orderAmount: 15000,
-    receivings: [],
+    orderedAt: "2026-01-08", expectedDelivery: "2026-02-03", orderedQty: 150, receivedQty: 90, pendingQty: 60, orderAmount: 22500,
+    receivings: [
+      { id: "re4", requisitionId: "GDN-3010", receivingId: "GRN-2026-020", receivingQty: 50, orderAmount: 7500, invoiceAmount: 7400, creationDate: "2026-01-15", createdBy: "Ankit", receivingDate: "2026-01-18" },
+      { id: "re5", requisitionId: "GDN-3011", receivingId: "GRN-2026-021", receivingQty: 40, orderAmount: 6000, invoiceAmount: 5900, creationDate: "2026-01-22", createdBy: "Meera", receivingDate: "2026-01-25" },
+      { id: "re6", requisitionId: "GDN-3012", receivingId: null, receivingQty: 0, orderAmount: 0, invoiceAmount: 0, creationDate: "2026-02-01", createdBy: "Raj", receivingDate: null },
+    ],
   },
+  // 4) TO, similar to 3 but Transfer type
   {
     id: "or4", orderId: "TO-2005", orderType: "Transfer", supplier: "Main Kitchen", outlet: "Central Warehouse",
-    orderedAt: "2026-01-28", expectedDelivery: "2026-02-05", orderedQty: 100, receivedQty: 0, pendingQty: 100, orderAmount: 18000,
-    receivings: [],
+    orderedAt: "2026-01-28", expectedDelivery: "2026-02-05", orderedQty: 100, receivedQty: 60, pendingQty: 40, orderAmount: 18000,
+    receivings: [
+      { id: "re7", requisitionId: "GDN-3020", receivingId: "GRN-2026-030", receivingQty: 35, orderAmount: 6300, invoiceAmount: 6200, creationDate: "2026-01-30", createdBy: "Ankit", receivingDate: "2026-02-01" },
+      { id: "re8", requisitionId: "GDN-3021", receivingId: "GRN-2026-031", receivingQty: 25, orderAmount: 4500, invoiceAmount: 4500, creationDate: "2026-02-02", createdBy: "Meera", receivingDate: "2026-02-03" },
+      { id: "re9", requisitionId: "GDN-3022", receivingId: null, receivingQty: 0, orderAmount: 0, invoiceAmount: 0, creationDate: "2026-02-04", createdBy: "Raj", receivingDate: null },
+    ],
   },
+  // 5) Fully received order (for Closed tab)
   {
     id: "or5", orderId: "PO-1003", orderType: "Vendor", supplier: "Metro Supply", outlet: "Main Kitchen",
     orderedAt: "2026-01-28", expectedDelivery: "2026-02-08", orderedQty: 200, receivedQty: 200, pendingQty: 0, orderAmount: 33490,
     receivings: [
-      { id: "re4", requisitionId: "PO-1003", receivingQty: 200, orderAmount: 33490, invoiceAmount: 33490, creationDate: "2026-02-06", createdBy: "Ankit", receivingDate: "2026-02-08" },
+      { id: "re10", requisitionId: "PO-1003", receivingId: "GRN-2026-040", receivingQty: 200, orderAmount: 33490, invoiceAmount: 33490, creationDate: "2026-02-06", createdBy: "Ankit", receivingDate: "2026-02-08" },
     ],
   },
 ];
@@ -106,9 +121,9 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
 
 const TYPE_BADGE: Record<OrderType, string> = {
-  Vendor: "bg-blue-50 text-blue-700",
-  Outlet: "bg-purple-50 text-purple-700",
-  Transfer: "bg-teal-50 text-teal-700",
+  Vendor: "bg-blue-50 text-blue-700 border-blue-200",
+  Outlet: "bg-purple-50 text-purple-700 border-purple-200",
+  Transfer: "bg-teal-50 text-teal-700 border-teal-200",
 };
 
 export default function Receivings() {
@@ -124,12 +139,10 @@ export default function Receivings() {
 
   const toggle = (id: string) => setExpanded((p) => ({ ...p, [id]: !p[id] }));
 
-  // Filter orders
-  const filteredOrders = useMemo(() => {
+  const filterOrders = (pendingFilter: "open" | "closed") => {
     return MOCK_ORDERS.filter((o) => {
-      // Open/Partial = pendingQty > 0
-      if (tab === "open" && o.pendingQty <= 0) return false;
-      if (tab === "closed" && o.pendingQty > 0) return false;
+      if (pendingFilter === "open" && o.pendingQty <= 0) return false;
+      if (pendingFilter === "closed" && o.pendingQty > 0) return false;
       if (outlet !== "all" && o.outlet !== MOCK_OUTLETS.find((x) => x.id === outlet)?.name) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -137,7 +150,10 @@ export default function Receivings() {
       }
       return true;
     });
-  }, [tab, outlet, search]);
+  };
+
+  const openOrders = useMemo(() => filterOrders("open"), [tab, outlet, search]);
+  const closedOrders = useMemo(() => filterOrders("closed"), [tab, outlet, search]);
 
   const filteredFulfilled = useMemo(() => {
     return fulfilledRows.filter((r) => {
@@ -153,7 +169,7 @@ export default function Receivings() {
     return closedRows.filter((r) => {
       if (search) {
         const q = search.toLowerCase();
-        if (!r.grnId.toLowerCase().includes(q) && !r.supplier.toLowerCase().includes(q) && !r.requisitionId.toLowerCase().includes(q)) return false;
+        if (!r.grnId.toLowerCase().includes(q) && !r.supplier.toLowerCase().includes(q)) return false;
       }
       return true;
     });
@@ -208,7 +224,7 @@ export default function Receivings() {
 
         {/* Open / Partial Tab */}
         <TabsContent value="open" className="mt-0">
-          <OpenPartialTable orders={filteredOrders} expanded={expanded} toggle={toggle} navigate={navigate} readOnly={false} />
+          <OpenPartialSections orders={openOrders} expanded={expanded} toggle={toggle} navigate={navigate} />
         </TabsContent>
 
         {/* Fulfilled Tab */}
@@ -218,128 +234,174 @@ export default function Receivings() {
 
         {/* Closed Tab */}
         <TabsContent value="closed" className="mt-0">
-          <ClosedTable orders={MOCK_ORDERS.filter((o) => o.pendingQty <= 0)} closedFulfilled={filteredClosed} navigate={navigate} search={search} outlet={outlet} />
+          <ClosedSections orders={closedOrders} closedFulfilled={filteredClosed} navigate={navigate} />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-/* ─── Open / Partial Table ─── */
-function OpenPartialTable({ orders, expanded, toggle, navigate, readOnly }: {
+/* ─── Open / Partial Sections ─── */
+function OpenPartialSections({ orders, expanded, toggle, navigate }: {
   orders: OrderRow[];
   expanded: Record<string, boolean>;
   toggle: (id: string) => void;
   navigate: ReturnType<typeof useNavigate>;
-  readOnly: boolean;
 }) {
   if (orders.length === 0) {
     return (
-      <div className="cento-card p-0 overflow-hidden">
-        <Table>
-          <TableBody>
-            <TableRow><TableCell colSpan={10} className="text-center py-12 text-muted-foreground">No orders found.</TableCell></TableRow>
-          </TableBody>
-        </Table>
+      <div className="cento-card">
+        <div className="cento-empty-state py-16">
+          <p className="text-sm text-muted-foreground">No open or partial orders found.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="cento-card p-0 overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/30 hover:bg-muted/30">
-            <TableHead className="w-10" />
-            <TableHead>Order ID</TableHead>
-            <TableHead>Order Type</TableHead>
-            <TableHead>Supplier</TableHead>
-            <TableHead>Ordered At</TableHead>
-            <TableHead>Expected Delivery</TableHead>
-            <TableHead className="text-right">Ordered Qty</TableHead>
-            <TableHead className="text-right">Received Qty</TableHead>
-            <TableHead className="text-right">Pending Qty</TableHead>
-            <TableHead className="text-right">Order Amount</TableHead>
-            <TableHead className="w-[100px]">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map((order) => {
-            const isOpen = expanded[order.id] ?? false;
-            const hasReceivings = order.receivings.length > 0;
-            return (
-              <>
-                <TableRow key={order.id} className="hover:bg-muted/20">
-                  <TableCell className="px-2">
+    <div className="space-y-3">
+      {orders.map((order) => {
+        const isOpen = expanded[order.id] ?? false;
+        const hasReceivings = order.receivings.length > 0;
+        const receivedPct = order.orderedQty > 0 ? Math.round((order.receivedQty / order.orderedQty) * 100) : 0;
+
+        return (
+          <div key={order.id} className="cento-card !p-0 overflow-hidden">
+            {/* Section Header */}
+            <div
+              className="px-5 py-4 cursor-pointer hover:bg-muted/20 transition-colors"
+              onClick={() => hasReceivings && toggle(order.id)}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  {/* Title row */}
+                  <div className="flex items-center gap-3 mb-3">
                     {hasReceivings && (
-                      <button onClick={() => toggle(order.id)} className="p-1 hover:bg-muted rounded transition-colors">
-                        {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-                      </button>
+                      <span className="text-muted-foreground">
+                        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </span>
                     )}
-                  </TableCell>
-                  <TableCell className="font-medium text-primary">{order.orderId}</TableCell>
-                  <TableCell>
-                    <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full", TYPE_BADGE[order.orderType])}>
+                    <span className="text-sm font-semibold text-primary">{order.orderId}</span>
+                    <Badge variant="outline" className={cn("text-[10px] font-medium px-2 py-0.5", TYPE_BADGE[order.orderType])}>
                       {order.orderType}
-                    </span>
-                  </TableCell>
-                  <TableCell>{order.supplier}</TableCell>
-                  <TableCell className="text-muted-foreground">{format(new Date(order.orderedAt), "dd MMM yyyy")}</TableCell>
-                  <TableCell className="text-muted-foreground">{format(new Date(order.expectedDelivery), "dd MMM yyyy")}</TableCell>
-                  <TableCell className="text-right">{order.orderedQty}</TableCell>
-                  <TableCell className="text-right text-emerald-700">{order.receivedQty}</TableCell>
-                  <TableCell className="text-right text-amber-600 font-medium">{order.pendingQty}</TableCell>
-                  <TableCell className="text-right font-medium">{fmt(order.orderAmount)}</TableCell>
-                  <TableCell>
-                    {readOnly ? (
-                      <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/procurements/receiving/view/${order.id}`)}>
-                        <Eye className="h-3 w-3 mr-1" /> View
-                      </Button>
-                    ) : hasReceivings ? (
-                      <button onClick={() => toggle(order.id)} className="text-lg">⬇️</button>
-                    ) : (
-                      <Button variant="cento" size="sm" className="text-xs h-7" onClick={() => navigate(`/procurements/receiving/receive/${order.id}`)}>
-                        Receive
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-                {isOpen && hasReceivings && order.receivings.map((entry, idx) => {
-                  const isLatest = idx === order.receivings.length - 1;
-                  return (
-                    <TableRow key={entry.id} className="bg-muted/10 border-l-2 border-l-primary/20">
-                      <TableCell />
-                      <TableCell className="font-medium text-muted-foreground pl-6">{entry.requisitionId}</TableCell>
-                      <TableCell colSpan={2} />
-                      <TableCell className="text-muted-foreground">{format(new Date(entry.creationDate), "dd MMM yyyy")}</TableCell>
-                      <TableCell className="text-muted-foreground">{entry.receivingDate ? format(new Date(entry.receivingDate), "dd MMM yyyy") : "—"}</TableCell>
-                      <TableCell className="text-right">{entry.receivingQty}</TableCell>
-                      <TableCell className="text-right">{fmt(entry.orderAmount)}</TableCell>
-                      <TableCell className="text-right">{fmt(entry.invoiceAmount)}</TableCell>
-                      <TableCell className="text-muted-foreground">{entry.createdBy}</TableCell>
-                      <TableCell>
-                        {readOnly ? (
-                          <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/procurements/receiving/view/${order.id}?entry=${entry.id}`)}>
-                            <Eye className="h-3 w-3 mr-1" /> View
-                          </Button>
-                        ) : isLatest ? (
-                          <Button variant="cento" size="sm" className="text-xs h-7" onClick={() => navigate(`/procurements/receiving/receive/${order.id}?entry=${entry.id}`)}>
-                            Receive
-                          </Button>
-                        ) : (
-                          <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(`/procurements/receiving/view/${order.id}?entry=${entry.id}`)}>
-                            <Eye className="h-3 w-3 mr-1" /> View
-                          </Button>
-                        )}
-                      </TableCell>
+                    </Badge>
+                  </div>
+
+                  {/* Info grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-6 gap-y-2 text-xs">
+                    <div>
+                      <span className="text-muted-foreground block mb-0.5">Supplier</span>
+                      <span className="font-medium text-foreground">{order.supplier}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block mb-0.5">Ordered At</span>
+                      <span className="font-medium text-foreground">{format(new Date(order.orderedAt), "dd MMM yyyy")}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block mb-0.5">Expected Delivery</span>
+                      <span className="font-medium text-foreground">{format(new Date(order.expectedDelivery), "dd MMM yyyy")}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block mb-0.5">Ordered Qty</span>
+                      <span className="font-medium text-foreground">{order.orderedQty}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block mb-0.5">Received Qty</span>
+                      <span className="font-medium text-emerald-700">{order.receivedQty}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block mb-0.5">Pending Qty</span>
+                      <span className="font-semibold text-amber-700">{order.pendingQty}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground block mb-0.5">Order Amount</span>
+                      <span className="font-semibold text-foreground">{fmt(order.orderAmount)}</span>
+                    </div>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mt-3 flex items-center gap-3">
+                    <Progress value={receivedPct} className="h-2 flex-1 bg-muted" />
+                    <span className="text-[10px] font-semibold text-muted-foreground whitespace-nowrap">{receivedPct}% received</span>
+                  </div>
+                </div>
+
+                {/* CTAs */}
+                <div className="flex items-center gap-2 shrink-0 pt-1" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" className="text-xs h-7"
+                    onClick={() => navigate(`/procurements/receiving/view/${order.id}`)}>
+                    <Eye className="h-3 w-3 mr-1" /> View Details
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-7"
+                    onClick={() => {
+                      // Close order → move to closed (in real app)
+                    }}>
+                    Close
+                  </Button>
+                  {order.orderType === "Vendor" && (
+                    <Button variant="cento" size="sm" className="text-xs h-7"
+                      onClick={() => navigate(`/procurements/receiving/receive/${order.id}`)}>
+                      Receive
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Collapsible receiving table */}
+            {isOpen && hasReceivings && (
+              <div className="border-t border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/20 hover:bg-muted/20">
+                      <TableHead className="text-[10px]">Requisition ID</TableHead>
+                      <TableHead className="text-[10px]">Receiving ID</TableHead>
+                      <TableHead className="text-[10px] text-right">Received Qty</TableHead>
+                      <TableHead className="text-[10px] text-right">Order Amount</TableHead>
+                      <TableHead className="text-[10px] text-right">Invoice Amount</TableHead>
+                      <TableHead className="text-[10px]">Creation Date</TableHead>
+                      <TableHead className="text-[10px]">Created By</TableHead>
+                      <TableHead className="text-[10px]">Receiving Date</TableHead>
+                      <TableHead className="text-[10px] w-[90px]">Action</TableHead>
                     </TableRow>
-                  );
-                })}
-              </>
-            );
-          })}
-        </TableBody>
-      </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {order.receivings.map((entry, idx) => {
+                      const isLatest = idx === order.receivings.length - 1;
+                      const hasNoReceiving = !entry.receivingId;
+                      return (
+                        <TableRow key={entry.id} className="hover:bg-muted/10">
+                          <TableCell className="font-medium text-foreground text-xs">{entry.requisitionId}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{entry.receivingId ?? "—"}</TableCell>
+                          <TableCell className="text-right text-xs">{entry.receivingQty || "—"}</TableCell>
+                          <TableCell className="text-right text-xs">{entry.orderAmount ? fmt(entry.orderAmount) : "—"}</TableCell>
+                          <TableCell className="text-right text-xs">{entry.invoiceAmount ? fmt(entry.invoiceAmount) : "—"}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{format(new Date(entry.creationDate), "dd MMM yyyy")}</TableCell>
+                          <TableCell className="text-xs">{entry.createdBy}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{entry.receivingDate ? format(new Date(entry.receivingDate), "dd MMM yyyy") : "—"}</TableCell>
+                          <TableCell>
+                            {isLatest && hasNoReceiving ? (
+                              <Button variant="cento" size="sm" className="text-[10px] h-6 px-2"
+                                onClick={() => navigate(`/procurements/receiving/receive/${order.id}`)}>
+                                Receive
+                              </Button>
+                            ) : (
+                              <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2"
+                                onClick={() => navigate(`/procurements/receiving/view/${order.id}?entry=${entry.id}`)}>
+                                <Eye className="h-3 w-3 mr-1" /> View
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -390,33 +452,114 @@ function FulfilledTable({ rows, onClose, navigate }: {
   );
 }
 
-/* ─── Closed Table (same as Open/Partial but view-only) ─── */
-function ClosedTable({ orders, closedFulfilled, navigate, search, outlet }: {
+/* ─── Closed Sections (read-only view) ─── */
+function ClosedSections({ orders, closedFulfilled, navigate }: {
   orders: OrderRow[];
   closedFulfilled: FulfilledRow[];
   navigate: ReturnType<typeof useNavigate>;
-  search: string;
-  outlet: string;
 }) {
-  // Combine original fully-received orders with closed-from-fulfilled
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggle = (id: string) => setExpanded((p) => ({ ...p, [id]: !p[id] }));
 
-  const filteredOrders = useMemo(() => {
-    return orders.filter((o) => {
-      if (outlet !== "all" && o.outlet !== MOCK_OUTLETS.find((x) => x.id === outlet)?.name) return false;
-      if (search) {
-        const q = search.toLowerCase();
-        if (!o.orderId.toLowerCase().includes(q) && !o.supplier.toLowerCase().includes(q)) return false;
-      }
-      return true;
-    });
-  }, [orders, search, outlet]);
-
-  // Show the closed fulfilled entries as a simple table too
   return (
     <div className="space-y-4">
-      <OpenPartialTable orders={filteredOrders} expanded={expanded} toggle={toggle} navigate={navigate} readOnly={true} />
+      {/* Closed orders as sections */}
+      {orders.length === 0 && closedFulfilled.length === 0 && (
+        <div className="cento-card">
+          <div className="cento-empty-state py-16">
+            <p className="text-sm text-muted-foreground">No closed orders yet.</p>
+          </div>
+        </div>
+      )}
+
+      {orders.map((order) => {
+        const isOpen = expanded[order.id] ?? false;
+        const hasReceivings = order.receivings.length > 0;
+
+        return (
+          <div key={order.id} className="cento-card !p-0 overflow-hidden">
+            <div className="px-5 py-4 cursor-pointer hover:bg-muted/20 transition-colors" onClick={() => hasReceivings && toggle(order.id)}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-3">
+                    {hasReceivings && (
+                      <span className="text-muted-foreground">
+                        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </span>
+                    )}
+                    <span className="text-sm font-semibold text-primary">{order.orderId}</span>
+                    <Badge variant="outline" className={cn("text-[10px] font-medium px-2 py-0.5", TYPE_BADGE[order.orderType])}>
+                      {order.orderType}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] font-medium px-2 py-0.5 border-emerald-200 bg-emerald-50 text-emerald-700">
+                      Closed
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-x-6 gap-y-2 text-xs">
+                    <div><span className="text-muted-foreground block mb-0.5">Supplier</span><span className="font-medium text-foreground">{order.supplier}</span></div>
+                    <div><span className="text-muted-foreground block mb-0.5">Ordered At</span><span className="font-medium text-foreground">{format(new Date(order.orderedAt), "dd MMM yyyy")}</span></div>
+                    <div><span className="text-muted-foreground block mb-0.5">Expected Delivery</span><span className="font-medium text-foreground">{format(new Date(order.expectedDelivery), "dd MMM yyyy")}</span></div>
+                    <div><span className="text-muted-foreground block mb-0.5">Ordered Qty</span><span className="font-medium text-foreground">{order.orderedQty}</span></div>
+                    <div><span className="text-muted-foreground block mb-0.5">Received Qty</span><span className="font-medium text-emerald-700">{order.receivedQty}</span></div>
+                    <div><span className="text-muted-foreground block mb-0.5">Pending Qty</span><span className="font-medium text-foreground">{order.pendingQty}</span></div>
+                    <div><span className="text-muted-foreground block mb-0.5">Order Amount</span><span className="font-semibold text-foreground">{fmt(order.orderAmount)}</span></div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 pt-1" onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm" className="text-xs h-7"
+                    onClick={() => navigate(`/procurements/receiving/view/${order.id}`)}>
+                    <Eye className="h-3 w-3 mr-1" /> View
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {isOpen && hasReceivings && (
+              <div className="border-t border-border">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/20 hover:bg-muted/20">
+                      <TableHead className="text-[10px]">Requisition ID</TableHead>
+                      <TableHead className="text-[10px]">Receiving ID</TableHead>
+                      <TableHead className="text-[10px] text-right">Received Qty</TableHead>
+                      <TableHead className="text-[10px] text-right">Order Amount</TableHead>
+                      <TableHead className="text-[10px] text-right">Invoice Amount</TableHead>
+                      <TableHead className="text-[10px]">Creation Date</TableHead>
+                      <TableHead className="text-[10px]">Created By</TableHead>
+                      <TableHead className="text-[10px]">Receiving Date</TableHead>
+                      <TableHead className="text-[10px] w-[90px]">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {order.receivings.map((entry) => (
+                      <TableRow key={entry.id} className="hover:bg-muted/10">
+                        <TableCell className="font-medium text-foreground text-xs">{entry.requisitionId}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{entry.receivingId ?? "—"}</TableCell>
+                        <TableCell className="text-right text-xs">{entry.receivingQty || "—"}</TableCell>
+                        <TableCell className="text-right text-xs">{entry.orderAmount ? fmt(entry.orderAmount) : "—"}</TableCell>
+                        <TableCell className="text-right text-xs">{entry.invoiceAmount ? fmt(entry.invoiceAmount) : "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{format(new Date(entry.creationDate), "dd MMM yyyy")}</TableCell>
+                        <TableCell className="text-xs">{entry.createdBy}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{entry.receivingDate ? format(new Date(entry.receivingDate), "dd MMM yyyy") : "—"}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2"
+                            onClick={() => navigate(`/procurements/receiving/view/${order.id}?entry=${entry.id}`)}>
+                            <Eye className="h-3 w-3 mr-1" /> View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Closed from fulfilled */}
       {closedFulfilled.length > 0 && (
         <div className="cento-card p-0 overflow-hidden">
           <div className="px-4 py-2.5 bg-muted/30 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider">
