@@ -27,7 +27,7 @@ import ViewOrderDetails from "./pages/procurements/orders/ViewOrderDetails";
 
 // Operations
 import Dispatches from "./pages/operations/Dispatches";
-import ViewDispatchDetails, { NewDispatch } from "./pages/operations/DispatchPages";
+import ViewDispatchDetails, { NewDispatch, PartialDispatch } from "./pages/operations/DispatchPages";
 import Transfers from "./pages/operations/Transfers";
 import NewTransfer from "./pages/operations/NewTransfer";
 import ViewTransferDetails from "./pages/operations/ViewTransferDetails";
@@ -92,6 +92,7 @@ const App = () => (
                     <Route path="/operations" element={<Navigate to="/operations/dispatches" replace />} />
                     <Route path="/operations/dispatches" element={<Dispatches />} />
                     <Route path="/operations/dispatches/new-dispatch" element={<NewDispatch />} />
+                    <Route path="/operations/dispatches/partial" element={<PartialDispatch />} />
                     <Route path="/operations/dispatches/:id" element={<ViewDispatchDetails />} />
                     <Route path="/operations/transfers" element={<Transfers />} />
                     <Route path="/operations/transfers/new-transfer" element={<NewTransfer />} />

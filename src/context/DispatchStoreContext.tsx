@@ -15,10 +15,23 @@ export interface NewDispatchItem {
   requisitionId: string;
   type: "PO" | "TO";
   raisedBy: string;
+  orderedQty: number;
   totalValue: number;
   requisitionDate: string;
   expectedDeliveryDate: string;
   lastUpdated: string;
+}
+
+export interface PartialDispatchItem {
+  requisitionId: string;
+  type: "PO" | "TO";
+  raisedBy: string;
+  orderedQty: number;
+  pendingQty: number;
+  receivedQty: number;
+  totalValue: number;
+  requisitionDate: string;
+  expectedDeliveryDate: string;
 }
 
 export interface DispatchOrder {
@@ -43,10 +56,16 @@ export interface DispatchOrder {
 }
 
 const SEED_NEW_DISPATCHES: NewDispatchItem[] = [
-  { requisitionId: "PO-1003", type: "PO", raisedBy: "Main Kitchen", totalValue: 31000, requisitionDate: "2026-01-28", expectedDeliveryDate: "2026-02-08", lastUpdated: "2026-01-28" },
-  { requisitionId: "PO-1005", type: "PO", raisedBy: "Main Kitchen", totalValue: 42000, requisitionDate: "2026-01-20", expectedDeliveryDate: "2026-02-01", lastUpdated: "2026-01-20" },
-  { requisitionId: "TO-2003", type: "TO", raisedBy: "Branch - Koramangala", totalValue: 22000, requisitionDate: "2026-02-05", expectedDeliveryDate: "2026-02-12", lastUpdated: "2026-02-05" },
-  { requisitionId: "TO-2005", type: "TO", raisedBy: "Central Warehouse", totalValue: 18000, requisitionDate: "2026-01-28", expectedDeliveryDate: "2026-02-05", lastUpdated: "2026-01-28" },
+  { requisitionId: "PO-1003", type: "PO", raisedBy: "Main Kitchen", orderedQty: 200, totalValue: 31000, requisitionDate: "2026-01-28", expectedDeliveryDate: "2026-02-08", lastUpdated: "2026-01-28" },
+  { requisitionId: "PO-1005", type: "PO", raisedBy: "Main Kitchen", orderedQty: 350, totalValue: 42000, requisitionDate: "2026-01-20", expectedDeliveryDate: "2026-02-01", lastUpdated: "2026-01-20" },
+  { requisitionId: "TO-2003", type: "TO", raisedBy: "Branch - Koramangala", orderedQty: 150, totalValue: 22000, requisitionDate: "2026-02-05", expectedDeliveryDate: "2026-02-12", lastUpdated: "2026-02-05" },
+  { requisitionId: "TO-2005", type: "TO", raisedBy: "Central Warehouse", orderedQty: 120, totalValue: 18000, requisitionDate: "2026-01-28", expectedDeliveryDate: "2026-02-05", lastUpdated: "2026-01-28" },
+];
+
+const SEED_PARTIAL_DISPATCHES: PartialDispatchItem[] = [
+  { requisitionId: "PO-1001", type: "PO", raisedBy: "Main Kitchen", orderedQty: 300, pendingQty: 120, receivedQty: 180, totalValue: 55000, requisitionDate: "2026-01-10", expectedDeliveryDate: "2026-01-25" },
+  { requisitionId: "PO-1002", type: "PO", raisedBy: "Branch - Indiranagar", orderedQty: 250, pendingQty: 90, receivedQty: 160, totalValue: 38000, requisitionDate: "2026-01-15", expectedDeliveryDate: "2026-01-30" },
+  { requisitionId: "TO-2001", type: "TO", raisedBy: "Central Warehouse", orderedQty: 200, pendingQty: 75, receivedQty: 125, totalValue: 28000, requisitionDate: "2026-01-18", expectedDeliveryDate: "2026-02-01" },
 ];
 
 const SEED_DISPATCHES: DispatchOrder[] = [
@@ -84,6 +103,7 @@ const SEED_DISPATCHES: DispatchOrder[] = [
 
 interface DispatchStoreContextType {
   newDispatches: NewDispatchItem[];
+  partialDispatches: PartialDispatchItem[];
   dispatches: DispatchOrder[];
   addDispatch: (order: Omit<DispatchOrder, "id">) => string;
   deleteDispatch: (id: string) => void;
@@ -98,6 +118,7 @@ let nextGdnId = 3004;
 
 export function DispatchStoreProvider({ children }: { children: React.ReactNode }) {
   const [newDispatches, setNewDispatches] = useState<NewDispatchItem[]>(SEED_NEW_DISPATCHES);
+  const [partialDispatches] = useState<PartialDispatchItem[]>(SEED_PARTIAL_DISPATCHES);
   const [dispatches, setDispatches] = useState<DispatchOrder[]>(SEED_DISPATCHES);
 
   const addDispatch = useCallback((order: Omit<DispatchOrder, "id">) => {
@@ -121,7 +142,7 @@ export function DispatchStoreProvider({ children }: { children: React.ReactNode 
   }, []);
 
   return (
-    <DispatchStoreContext.Provider value={{ newDispatches, dispatches, addDispatch, deleteDispatch, updateDispatchStatus, getDispatch, removeNewDispatch }}>
+    <DispatchStoreContext.Provider value={{ newDispatches, partialDispatches, dispatches, addDispatch, deleteDispatch, updateDispatchStatus, getDispatch, removeNewDispatch }}>
       {children}
     </DispatchStoreContext.Provider>
   );
