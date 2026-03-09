@@ -665,12 +665,12 @@ export default function NewPurchase() {
     } as const;
   };
 
-  const handleGenerate = () => {
+  const handleSubmitForApproval = () => {
     if (!deliveryDate) { setEddError(true); return; }
     setEddError(false);
     if (!hasItems || !supplierSelected) return;
     addOrder(buildOrderPayload("Raised"));
-    toast({ title: "PO Generated", description: "Purchase order has been raised." });
+    toast({ title: "PO Submitted", description: "Purchase order has been submitted for approval." });
     navigate("/procurements/purchases", { state: { tab: "raised" } });
   };
 
