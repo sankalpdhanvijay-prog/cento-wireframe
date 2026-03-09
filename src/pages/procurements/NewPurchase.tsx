@@ -521,16 +521,12 @@ export default function NewPurchase() {
       const existingIds = new Set(prev.map((li) => li.materialId));
       const newItems = [...prev];
 
-      // Remove materials no longer selected
-      const selectedSet = new Set(materialIds);
-      const filtered = newItems.filter((li) => selectedSet.has(li.materialId));
-
-      // Add new materials
+      // Add-only: only append new materials, never remove existing rows
       materialIds.forEach((id) => {
         if (existingIds.has(id)) return;
         const mat = MOCK_MATERIALS.find((m) => m.id === id);
         if (!mat) return;
-        filtered.push({
+        newItems.push({
           id: crypto.randomUUID(),
           materialId: mat.id,
           code: mat.code,
@@ -549,7 +545,7 @@ export default function NewPurchase() {
         });
       });
 
-      return filtered;
+      return newItems;
     });
   }, [activeBulkTax]);
 
