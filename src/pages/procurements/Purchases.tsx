@@ -16,7 +16,7 @@ const TAB_KEY: Record<string, POStatus> = {
   drafted: "Drafted",
   raised: "Raised",
   approved: "Approved",
-  cancelled: "Cancelled",
+  rejected: "Rejected",
 };
 
 const fmt = (n: number) =>
