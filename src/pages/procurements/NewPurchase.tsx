@@ -938,7 +938,16 @@ export default function NewPurchase() {
                       </Select>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground text-right tabular-nums">{item.currentStock}</td>
-                    <td className="px-4 py-4 text-right tabular-nums">₹{item.buyingPrice.toFixed(2)}</td>
+                    <td className="px-4 py-4">
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={item.buyingPrice || ""}
+                        onChange={(e) => updateItem(item.id, { buyingPrice: parseFloat(e.target.value) || 0 })}
+                        className="w-28 h-8 text-sm text-right bg-background"
+                      />
+                    </td>
                     <td className="px-4 py-4">
                       <Input
                         type="number"
