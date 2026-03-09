@@ -239,7 +239,7 @@ export default function Purchases() {
               <TabsTrigger value="drafted" className="text-xs px-3 py-1.5">Drafted</TabsTrigger>
               <TabsTrigger value="raised" className="text-xs px-3 py-1.5">Raised</TabsTrigger>
               <TabsTrigger value="approved" className="text-xs px-3 py-1.5">Approved</TabsTrigger>
-              <TabsTrigger value="cancelled" className="text-xs px-3 py-1.5">Cancelled</TabsTrigger>
+              <TabsTrigger value="rejected" className="text-xs px-3 py-1.5">Rejected</TabsTrigger>
             </TabsList>
 
             <button
