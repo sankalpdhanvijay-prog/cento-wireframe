@@ -1143,8 +1143,8 @@ export default function NewPurchase() {
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    disabled={!hasItems}
-                    className={cn("bg-background min-w-[100px]", !hasItems && "opacity-40 cursor-not-allowed")}
+                    disabled={!hasItems || !supplierSelected}
+                    className={cn("bg-background min-w-[100px]", (!hasItems || !supplierSelected) && "opacity-40 cursor-not-allowed")}
                     onClick={handleDraft}
                   >
                     Save as Draft
@@ -1153,9 +1153,9 @@ export default function NewPurchase() {
                     variant="cento"
                     disabled={!canGenerate}
                     className={cn("min-w-[120px]", !canGenerate && "opacity-40 cursor-not-allowed")}
-                    onClick={handleGenerate}
+                    onClick={handleSubmitForApproval}
                   >
-                    Generate PO
+                    Submit for Approval
                   </Button>
                 </div>
               </div>
