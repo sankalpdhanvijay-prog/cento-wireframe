@@ -204,7 +204,7 @@ export default function Purchases() {
             <TableCell>{viewBtn(row)}</TableCell>
           </TableRow>
         );
-      case "cancelled":
+      case "rejected":
         return (
           <TableRow key={row.id} className="hover:bg-muted/20">
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
@@ -212,8 +212,9 @@ export default function Purchases() {
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
-            <TableCell className="text-muted-foreground">{row.cancelledDate}</TableCell>
-            <TableCell>{row.cancelledBy}</TableCell>
+            <TableCell>{row.createdBy}</TableCell>
+            <TableCell className="text-muted-foreground">{row.rejectedOn}</TableCell>
+            <TableCell>{row.rejectedBy}</TableCell>
             <TableCell>{viewBtn(row)}</TableCell>
           </TableRow>
         );
