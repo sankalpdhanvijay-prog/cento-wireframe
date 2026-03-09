@@ -113,7 +113,7 @@ export default function Purchases() {
             <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
-      case "cancelled":
+      case "rejected":
         return (
           <>
             <TableHead className="w-[100px]">PO ID</TableHead>
@@ -121,8 +121,9 @@ export default function Purchases() {
             <TableHead>Vendor</TableHead>
             <TableHead>Outlet</TableHead>
             <TableHead className="text-right">Total Value</TableHead>
-            <TableHead>Cancelled Date</TableHead>
-            <TableHead>Cancelled By</TableHead>
+            <TableHead>Created By</TableHead>
+            <TableHead>Rejected On</TableHead>
+            <TableHead>Rejected By</TableHead>
             <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
