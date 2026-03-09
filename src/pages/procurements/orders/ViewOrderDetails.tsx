@@ -8,8 +8,11 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
 } from "@/components/ui/table";
 import {
-  ArrowLeft, CheckCircle2, XCircle, Package, Pencil, Download, ChevronDown, ChevronUp,
+  ArrowLeft, CheckCircle2, XCircle, Package, Pencil, Download, Trash2, ChevronDown, ChevronUp, AlertTriangle,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import { usePOStore, type POStatus } from "@/context/POStoreContext";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 
@@ -20,7 +23,7 @@ const STATUS_COLOR: Record<POStatus, string> = {
   "Partially Received": "bg-amber-50 text-amber-700 border-amber-200",
   Received: "bg-green-50 text-green-700 border-green-200",
   Closed: "bg-neutral-100 text-neutral-600 border-neutral-300",
-  Cancelled: "bg-red-50 text-red-600 border-red-200",
+  Rejected: "bg-red-50 text-red-600 border-red-200",
 };
 
 const fmt = (n: number) =>
@@ -29,9 +32,10 @@ const fmt = (n: number) =>
 export default function ViewOrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getOrder, updateOrderStatus } = usePOStore();
+  const { getOrder, updateOrderStatus, deleteOrder } = usePOStore();
   const [taxBreakdownOpen, setTaxBreakdownOpen] = useState(true);
   const [confirmAction, setConfirmAction] = useState<{ action: string; title: string; description: string } | null>(null);
+  const [noDispatchModal, setNoDispatchModal] = useState(false);
 
   const po = id ? getOrder(id) : undefined;
 
@@ -47,7 +51,10 @@ export default function ViewOrderDetails() {
   }
 
   const showReceivingTotals = po.status === "Partially Received" || po.status === "Closed";
-  const showExport = po.status === "Raised" || po.status === "Approved" || po.status === "Cancelled";
+  const showExport = po.status === "Approved";
+
+  // Mock: simulate hasDispatches — true for PO-1005 only
+  const hasDispatches = po.id === "PO-1005";
 
   const executeAction = (action: string) => {
     switch (action) {
@@ -59,11 +66,19 @@ export default function ViewOrderDetails() {
         navigate("/procurements/purchases", { state: { tab: "approved" } });
         break;
       case "receive":
-        navigate("/procurements/new-receiving/po", { state: { poId: po.id } });
+        if (hasDispatches) {
+          navigate("/procurements/receivings", { state: { tab: "pending", poId: po.id } });
+        } else {
+          setNoDispatchModal(true);
+        }
         break;
-      case "cancel":
-        updateOrderStatus(po.id, "Cancelled");
-        navigate("/procurements/purchases", { state: { tab: "cancelled" } });
+      case "reject":
+        updateOrderStatus(po.id, "Rejected");
+        navigate("/procurements/purchases", { state: { tab: "rejected" } });
+        break;
+      case "delete":
+        deleteOrder(po.id);
+        navigate("/procurements/purchases", { state: { tab: "drafted" } });
         break;
     }
   };
@@ -71,9 +86,12 @@ export default function ViewOrderDetails() {
   const handleAction = (action: string) => {
     const confirmMap: Record<string, { title: string; description: string }> = {
       approve: { title: "Approval Confirmation", description: "Clicking on Confirm will Approve the Purchase Order." },
-      cancel: { title: "Cancellation Confirmation", description: "Clicking on Confirm will Cancel the Purchase Order." },
-      receive: { title: "Receive Confirmation", description: "Clicking on Confirm will start receiving for this Purchase Order." },
+      reject: { title: "Rejection Confirmation", description: "Clicking on Confirm will Reject this Purchase Order." },
       edit: { title: "Edit Confirmation", description: "Clicking on Confirm will open the Purchase Order for editing." },
+      delete: {
+        title: "Delete Draft PO?",
+        description: `This will permanently delete ${po.id} for ${po.vendor} (${fmt(po.totalValue)}). This cannot be undone.`,
+      },
     };
     const conf = confirmMap[action];
     if (conf) {
@@ -133,11 +151,13 @@ export default function ViewOrderDetails() {
             <DetailField label="Expected Delivery Date" value={po.expectedDelivery ?? "—"} />
             <DetailField label="Remarks" value={po.remarks || "—"} />
             {po.approvedOn && <DetailField label="Approved On" value={po.approvedOn} />}
+            {po.approvedBy && <DetailField label="Approved By" value={po.approvedBy} />}
+            {po.status === "Approved" && po.prnId && <DetailField label="PRN ID" value={po.prnId} highlight />}
             {po.lastUpdated && <DetailField label="Last Updated" value={po.lastUpdated} />}
             {po.closedBy && <DetailField label="Closed By" value={po.closedBy} />}
             {po.closedDate && <DetailField label="Closed Date" value={po.closedDate} />}
-            {po.cancelledBy && <DetailField label="Cancelled By" value={po.cancelledBy} />}
-            {po.cancelledDate && <DetailField label="Cancelled Date" value={po.cancelledDate} />}
+            {po.rejectedBy && <DetailField label="Rejected By" value={po.rejectedBy} />}
+            {po.rejectedOn && <DetailField label="Rejected On" value={po.rejectedOn} />}
           </div>
         </CardContent>
       </Card>
@@ -151,6 +171,7 @@ export default function ViewOrderDetails() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead>Material Code</TableHead>
                 <TableHead>Item Name</TableHead>
                 <TableHead className="text-right">Ordered Qty</TableHead>
                 <TableHead className="text-right">Unit Price</TableHead>
@@ -164,6 +185,7 @@ export default function ViewOrderDetails() {
                 const total = m.lineTotal + taxAmount;
                 return (
                   <TableRow key={i}>
+                    <TableCell className="font-mono text-xs text-muted-foreground">{m.code ?? "—"}</TableCell>
                     <TableCell className="font-medium">{m.name}</TableCell>
                     <TableCell className="text-right">{m.orderedQty}</TableCell>
                     <TableCell className="text-right">{fmt(m.unitPrice)}</TableCell>
@@ -231,8 +253,8 @@ export default function ViewOrderDetails() {
           <div className="max-w-[1000px] mx-auto flex items-center justify-end gap-3 px-6 py-3">
             {po.status === "Drafted" && (
               <>
-                <Button variant="destructive" size="sm" onClick={() => handleAction("cancel")}>
-                  <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel PO
+                <Button variant="destructive" size="sm" onClick={() => handleAction("delete")}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => handleAction("edit")}>
                   <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
@@ -241,27 +263,39 @@ export default function ViewOrderDetails() {
             )}
             {po.status === "Raised" && (
               <>
-                <Button variant="destructive" size="sm" onClick={() => handleAction("cancel")}>
-                  <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel PO
+                <Button variant="destructive" size="sm" onClick={() => handleAction("reject")}>
+                  <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
                 </Button>
                 <Button variant="cento" size="sm" onClick={() => handleAction("approve")}>
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve PO
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
                 </Button>
               </>
             )}
             {po.status === "Approved" && (
-              <>
-                <Button variant="destructive" size="sm" onClick={() => handleAction("cancel")}>
-                  <XCircle className="h-3.5 w-3.5 mr-1" /> Cancel PO
-                </Button>
-                <Button variant="cento" size="sm" onClick={() => handleAction("receive")}>
-                  <Package className="h-3.5 w-3.5 mr-1" /> Receive PO
-                </Button>
-              </>
+              <Button variant="cento" size="sm" onClick={() => executeAction("receive")}>
+                <Package className="h-3.5 w-3.5 mr-1" /> Receive Orders
+              </Button>
             )}
           </div>
         </div>
       )}
+
+      {/* No Dispatches Info Modal */}
+      <Dialog open={noDispatchModal} onOpenChange={setNoDispatchModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" /> No Dispatches Found
+            </DialogTitle>
+            <DialogDescription>
+              No dispatches associated with this PO yet. Please wait for dispatches to be created before receiving.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNoDispatchModal(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmationModal
         open={!!confirmAction}
@@ -270,7 +304,7 @@ export default function ViewOrderDetails() {
         description={confirmAction?.description ?? ""}
         onConfirm={() => { if (confirmAction) executeAction(confirmAction.action); setConfirmAction(null); }}
         confirmLabel="Confirm"
-        confirmVariant={confirmAction?.action === "cancel" ? "destructive" : "default"}
+        confirmVariant={confirmAction?.action === "reject" || confirmAction?.action === "delete" ? "destructive" : "default"}
       />
     </div>
   );

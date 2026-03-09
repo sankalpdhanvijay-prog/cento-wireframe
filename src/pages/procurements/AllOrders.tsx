@@ -27,7 +27,7 @@ const STATUS_COLOR: Record<POStatus, string> = {
   "Partially Received": "bg-amber-50 text-amber-700 border-amber-200",
   Received: "bg-green-50 text-green-700 border-green-200",
   Closed: "bg-neutral-100 text-neutral-600 border-neutral-300",
-  Cancelled: "bg-red-50 text-red-600 border-red-200",
+  Rejected: "bg-red-50 text-red-600 border-red-200",
 };
 
 const TAB_KEY: Record<string, POStatus> = {
@@ -37,11 +37,18 @@ const TAB_KEY: Record<string, POStatus> = {
   partial: "Partially Received",
   received: "Received",
   closed: "Closed",
-  cancelled: "Cancelled",
+  rejected: "Rejected",
 };
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+
+// Mock templates data
+const MOCK_TEMPLATES = [
+  { id: "t1", name: "Weekly Staples - Sysco", supplierType: "Vendor", createdBy: "Ankit", materialIds: ["m1", "m2", "m3", "m8"] },
+  { id: "t2", name: "Dairy Essentials", supplierType: "Vendor", createdBy: "Meera", materialIds: ["m7"] },
+  { id: "t3", name: "Fresh Produce - Branch", supplierType: "Outlet", createdBy: "Raj", materialIds: ["m4", "m9", "m10"] },
+];
 
 export default function AllOrders() {
   const navigate = useNavigate();
@@ -51,6 +58,15 @@ export default function AllOrders() {
   const [deleteTarget, setDeleteTarget] = useState<PurchaseOrder | null>(null);
 
   const activeStatus = TAB_KEY[tab];
+
+  // Count orders per status for tab badges
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    Object.entries(TAB_KEY).forEach(([key, status]) => {
+      counts[key] = orders.filter((o) => o.status === status).length;
+    });
+    return counts;
+  }, [orders]);
 
   const rows = useMemo(() => {
     return orders.filter((r) => {
@@ -81,10 +97,6 @@ export default function AllOrders() {
       case "delete":
         setDeleteTarget(row);
         break;
-      case "cancel":
-        break;
-      case "close":
-        break;
     }
   };
 
@@ -105,7 +117,6 @@ export default function AllOrders() {
           </>
         );
       case "raised":
-      case "approved":
         return (
           <>
             <TableHead className="w-[100px]">PO ID</TableHead>
@@ -115,6 +126,21 @@ export default function AllOrders() {
             <TableHead className="text-right">Ordered Qty</TableHead>
             <TableHead>Created By</TableHead>
             <TableHead>Created On</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="w-[48px]" />
+          </>
+        );
+      case "approved":
+        return (
+          <>
+            <TableHead className="w-[100px]">PO ID</TableHead>
+            <TableHead>Vendor</TableHead>
+            <TableHead>Outlet</TableHead>
+            <TableHead className="text-right">Total Value</TableHead>
+            <TableHead className="text-right">Ordered Qty</TableHead>
+            <TableHead>Created By</TableHead>
+            <TableHead>Approved On</TableHead>
+            <TableHead>Approved By</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[48px]" />
           </>
@@ -150,17 +176,28 @@ export default function AllOrders() {
             <TableHead className="w-[48px]" />
           </>
         );
-      case "cancelled":
+      case "rejected":
         return (
           <>
             <TableHead className="w-[100px]">PO ID</TableHead>
-            <TableHead>Vendor</TableHead>
+            <TableHead>Supplier Type</TableHead>
+            <TableHead>Supplier</TableHead>
             <TableHead>Outlet</TableHead>
             <TableHead className="text-right">Total Value</TableHead>
-            <TableHead>Cancelled Date</TableHead>
-            <TableHead>Cancelled By</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Created By</TableHead>
+            <TableHead>Rejected On</TableHead>
+            <TableHead>Rejected By</TableHead>
             <TableHead className="w-[48px]" />
+          </>
+        );
+      case "templates":
+        return (
+          <>
+            <TableHead>Template Name</TableHead>
+            <TableHead>Supplier Type</TableHead>
+            <TableHead>No. of Materials</TableHead>
+            <TableHead>Created By</TableHead>
+            <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
       default:
@@ -204,7 +241,6 @@ export default function AllOrders() {
           </TableRow>
         );
       case "raised":
-      case "approved":
         return (
           <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/procurements/all-orders/${row.id}`)}>
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
@@ -214,6 +250,21 @@ export default function AllOrders() {
             <TableCell className="text-right">{row.totalQty}</TableCell>
             <TableCell>{row.createdBy}</TableCell>
             <TableCell className="text-muted-foreground">{row.createdOn}</TableCell>
+            <TableCell><Badge variant="outline" className={STATUS_COLOR[row.status]}>{row.status}</Badge></TableCell>
+            <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
+          </TableRow>
+        );
+      case "approved":
+        return (
+          <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/procurements/all-orders/${row.id}`)}>
+            <TableCell className="font-medium text-primary">{row.id}</TableCell>
+            <TableCell>{row.vendor}</TableCell>
+            <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
+            <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
+            <TableCell className="text-right">{row.totalQty}</TableCell>
+            <TableCell>{row.createdBy}</TableCell>
+            <TableCell className="text-muted-foreground">{row.approvedOn ?? "—"}</TableCell>
+            <TableCell>{row.approvedBy ?? "—"}</TableCell>
             <TableCell><Badge variant="outline" className={STATUS_COLOR[row.status]}>{row.status}</Badge></TableCell>
             <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
           </TableRow>
@@ -249,16 +300,21 @@ export default function AllOrders() {
             <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
           </TableRow>
         );
-      case "cancelled":
+      case "rejected":
         return (
           <TableRow key={row.id} className="cursor-pointer hover:bg-muted/40" onClick={() => navigate(`/procurements/all-orders/${row.id}`)}>
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
+            <TableCell>
+              <Badge variant="outline" className={row.supplierType === "Vendor" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"}>
+                {row.supplierType}
+              </Badge>
+            </TableCell>
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
-            <TableCell className="text-muted-foreground">{row.cancelledDate}</TableCell>
-            <TableCell>{row.cancelledBy}</TableCell>
-            <TableCell><Badge variant="outline" className={STATUS_COLOR[row.status]}>{row.status}</Badge></TableCell>
+            <TableCell>{row.createdBy}</TableCell>
+            <TableCell className="text-muted-foreground">{row.rejectedOn}</TableCell>
+            <TableCell>{row.rejectedBy}</TableCell>
             <TableCell onClick={(e) => e.stopPropagation()}>{actionMenu}</TableCell>
           </TableRow>
         );
@@ -276,20 +332,21 @@ export default function AllOrders() {
             <Plus className="h-4 w-4" /> Raise Receiving
           </Button>
           <Button variant="cento" onClick={() => navigate("/procurements/new-purchase")}>
-            <Plus className="h-4 w-4" /> Raise PO
+            <Plus className="h-4 w-4" /> New PO+
           </Button>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-muted/60 p-1 h-auto gap-0.5">
-          <TabsTrigger value="drafted" className="text-xs px-3 py-1.5">Drafted</TabsTrigger>
-          <TabsTrigger value="raised" className="text-xs px-3 py-1.5">Raised</TabsTrigger>
-          <TabsTrigger value="approved" className="text-xs px-3 py-1.5">Approved</TabsTrigger>
-          <TabsTrigger value="partial" className="text-xs px-3 py-1.5">Partially Received</TabsTrigger>
-          <TabsTrigger value="received" className="text-xs px-3 py-1.5">Received</TabsTrigger>
-          <TabsTrigger value="closed" className="text-xs px-3 py-1.5">Closed</TabsTrigger>
-          <TabsTrigger value="cancelled" className="text-xs px-3 py-1.5">Cancelled</TabsTrigger>
+          <TabsTrigger value="drafted" className="text-xs px-3 py-1.5">Drafted ({statusCounts.drafted})</TabsTrigger>
+          <TabsTrigger value="raised" className="text-xs px-3 py-1.5">Raised ({statusCounts.raised})</TabsTrigger>
+          <TabsTrigger value="approved" className="text-xs px-3 py-1.5">Approved ({statusCounts.approved})</TabsTrigger>
+          <TabsTrigger value="rejected" className="text-xs px-3 py-1.5">Rejected ({statusCounts.rejected})</TabsTrigger>
+          <TabsTrigger value="partial" className="text-xs px-3 py-1.5">Partially Received ({statusCounts.partial})</TabsTrigger>
+          <TabsTrigger value="received" className="text-xs px-3 py-1.5">Received ({statusCounts.received})</TabsTrigger>
+          <TabsTrigger value="closed" className="text-xs px-3 py-1.5">Closed ({statusCounts.closed})</TabsTrigger>
+          <TabsTrigger value="templates" className="text-xs px-3 py-1.5">Templates</TabsTrigger>
         </TabsList>
 
         <div className="mt-3 mb-1">
@@ -304,6 +361,7 @@ export default function AllOrders() {
           </div>
         </div>
 
+        {/* Status tabs */}
         {Object.keys(TAB_KEY).map((key) => (
           <TabsContent key={key} value={key} className="mt-0">
             <div className="cento-card p-0 overflow-hidden">
@@ -326,6 +384,45 @@ export default function AllOrders() {
             </div>
           </TabsContent>
         ))}
+
+        {/* Templates tab */}
+        <TabsContent value="templates" className="mt-0">
+          <div className="cento-card p-0 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30 hover:bg-muted/30">{renderColumns()}</TableRow>
+              </TableHeader>
+              <TableBody>
+                {MOCK_TEMPLATES.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                      No templates found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  MOCK_TEMPLATES.map((t) => (
+                    <TableRow key={t.id} className="hover:bg-muted/40">
+                      <TableCell className="font-medium">{t.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={t.supplierType === "Vendor" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"}>
+                          {t.supplierType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{t.materialIds.length}</TableCell>
+                      <TableCell>{t.createdBy}</TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" className="text-xs h-7"
+                          onClick={() => navigate("/procurements/new-purchase", { state: { templateId: t.id } })}>
+                          Use
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
@@ -333,7 +430,7 @@ export default function AllOrders() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Draft PO?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. PO <span className="font-semibold">{deleteTarget?.id}</span> will be permanently removed.
+              This will permanently delete <span className="font-semibold">{deleteTarget?.id}</span> for <span className="font-semibold">{deleteTarget?.vendor}</span> ({deleteTarget ? fmt(deleteTarget.totalValue) : ""}). This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -359,12 +456,10 @@ function getActions(tab: string) {
     case "raised":
       return [
         { key: "view", label: "View Details", icon: Eye, destructive: false },
-        { key: "cancel", label: "Cancel PO", icon: XCircle, destructive: true },
       ];
     case "approved":
       return [
         { key: "view", label: "View Details", icon: Eye, destructive: false },
-        { key: "cancel", label: "Cancel PO", icon: XCircle, destructive: true },
       ];
     case "partial":
       return [
@@ -377,7 +472,7 @@ function getActions(tab: string) {
         { key: "close", label: "Close PO", icon: Lock, destructive: false },
       ];
     case "closed":
-    case "cancelled":
+    case "rejected":
       return [
         { key: "view", label: "View Details", icon: Eye, destructive: false },
       ];
