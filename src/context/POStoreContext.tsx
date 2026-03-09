@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import { format } from "date-fns";
 
 /* ───── Shared Types ───── */
-export type POStatus = "Drafted" | "Raised" | "Approved" | "Partially Received" | "Received" | "Closed" | "Cancelled";
+export type POStatus = "Drafted" | "Raised" | "Approved" | "Partially Received" | "Received" | "Closed" | "Rejected";
 
 export interface POLineItem {
   name: string;
@@ -12,6 +12,7 @@ export interface POLineItem {
   lineTotal: number;
   receivedQty: number;
   pendingQty: number;
+  code?: string;
 }
 
 export type SupplierType = "Vendor" | "Outlet";
@@ -28,12 +29,14 @@ export interface PurchaseOrder {
   createdBy: string;
   createdOn: string;
   approvedOn?: string;
+  approvedBy?: string;
+  prnId?: string;
   lastUpdated?: string;
   lastReceivingDate?: string;
   closedDate?: string;
   closedBy?: string;
-  cancelledDate?: string;
-  cancelledBy?: string;
+  rejectedOn?: string;
+  rejectedBy?: string;
   status: POStatus;
   expectedDelivery?: string;
   remarks?: string;
@@ -55,9 +58,9 @@ const SEED_ORDERS: PurchaseOrder[] = [
     createdBy: "Ankit", createdOn: "2026-02-01", lastUpdated: "2026-02-02", status: "Drafted",
     expectedDelivery: "2026-02-10",
     materials: [
-      { name: "Basmati Rice 25kg", orderedQty: 50, unitPrice: 220, taxPct: 5, lineTotal: 11000, receivedQty: 0, pendingQty: 50 },
-      { name: "Sunflower Oil 15L", orderedQty: 30, unitPrice: 350, taxPct: 12, lineTotal: 10500, receivedQty: 0, pendingQty: 30 },
-      { name: "Wheat Flour 50kg", orderedQty: 40, unitPrice: 75, taxPct: 5, lineTotal: 3000, receivedQty: 0, pendingQty: 40 },
+      { name: "Basmati Rice 25kg", orderedQty: 50, unitPrice: 220, taxPct: 5, lineTotal: 11000, receivedQty: 0, pendingQty: 50, code: "RM-001" },
+      { name: "Sunflower Oil 15L", orderedQty: 30, unitPrice: 350, taxPct: 12, lineTotal: 10500, receivedQty: 0, pendingQty: 30, code: "RM-002" },
+      { name: "Wheat Flour 50kg", orderedQty: 40, unitPrice: 75, taxPct: 5, lineTotal: 3000, receivedQty: 0, pendingQty: 40, code: "RM-008" },
     ],
     poSubtotal: 24500, totalTax: 1765, grandTotal: 26265,
   },
@@ -65,8 +68,8 @@ const SEED_ORDERS: PurchaseOrder[] = [
     id: "PO-1002", vendor: "US Foods", outlet: "Central Warehouse", supplierType: "Vendor", totalValue: 18200, totalQty: 85,
     createdBy: "Meera", createdOn: "2026-02-03", lastUpdated: "2026-02-04", status: "Drafted",
     materials: [
-      { name: "Olive Oil 5L", orderedQty: 25, unitPrice: 480, taxPct: 12, lineTotal: 12000, receivedQty: 0, pendingQty: 25 },
-      { name: "Black Pepper 1kg", orderedQty: 60, unitPrice: 103.33, taxPct: 5, lineTotal: 6200, receivedQty: 0, pendingQty: 60 },
+      { name: "Olive Oil 5L", orderedQty: 25, unitPrice: 480, taxPct: 12, lineTotal: 12000, receivedQty: 0, pendingQty: 25, code: "RM-002" },
+      { name: "Black Pepper 1kg", orderedQty: 60, unitPrice: 103.33, taxPct: 5, lineTotal: 6200, receivedQty: 0, pendingQty: 60, code: "RM-012" },
     ],
     poSubtotal: 18200, totalTax: 1750, grandTotal: 19950,
   },
@@ -74,7 +77,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     id: "PO-1003", vendor: "Metro Supply", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 31000, totalQty: 200,
     createdBy: "Ankit", createdOn: "2026-01-28", status: "Raised", expectedDelivery: "2026-02-08",
     materials: [
-      { name: "Tomato Paste 5kg", orderedQty: 80, unitPrice: 150, taxPct: 12, lineTotal: 12000, receivedQty: 0, pendingQty: 80 },
+      { name: "Tomato Paste 5kg", orderedQty: 80, unitPrice: 150, taxPct: 12, lineTotal: 12000, receivedQty: 0, pendingQty: 80, code: "RM-005" },
       { name: "Chickpeas 25kg", orderedQty: 60, unitPrice: 180, taxPct: 5, lineTotal: 10800, receivedQty: 0, pendingQty: 60 },
       { name: "Salt 50kg", orderedQty: 60, unitPrice: 136.67, taxPct: 5, lineTotal: 8200, receivedQty: 0, pendingQty: 60 },
     ],
@@ -92,8 +95,9 @@ const SEED_ORDERS: PurchaseOrder[] = [
   {
     id: "PO-1005", vendor: "Sysco Foods", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 42000, totalQty: 310,
     createdBy: "Raj", createdOn: "2026-01-20", status: "Approved", expectedDelivery: "2026-02-01",
+    approvedOn: "2026-01-22", approvedBy: "Admin", prnId: "PRN-PO-1005",
     materials: [
-      { name: "Basmati Rice 25kg", orderedQty: 100, unitPrice: 220, taxPct: 5, lineTotal: 22000, receivedQty: 0, pendingQty: 100 },
+      { name: "Basmati Rice 25kg", orderedQty: 100, unitPrice: 220, taxPct: 5, lineTotal: 22000, receivedQty: 0, pendingQty: 100, code: "RM-001" },
       { name: "Sugar 50kg", orderedQty: 80, unitPrice: 125, taxPct: 5, lineTotal: 10000, receivedQty: 0, pendingQty: 80 },
       { name: "Turmeric Powder 5kg", orderedQty: 130, unitPrice: 76.92, taxPct: 12, lineTotal: 10000, receivedQty: 0, pendingQty: 130 },
     ],
@@ -102,8 +106,9 @@ const SEED_ORDERS: PurchaseOrder[] = [
   {
     id: "PO-1006", vendor: "Metro Supply", outlet: "South Outlet", supplierType: "Vendor", totalValue: 9500, totalQty: 55,
     createdBy: "Ankit", createdOn: "2026-01-18", status: "Approved",
+    approvedOn: "2026-01-20", approvedBy: "Admin", prnId: "PRN-PO-1006",
     materials: [
-      { name: "Coriander Powder 1kg", orderedQty: 55, unitPrice: 172.73, taxPct: 5, lineTotal: 9500, receivedQty: 0, pendingQty: 55 },
+      { name: "Coriander Powder 1kg", orderedQty: 55, unitPrice: 172.73, taxPct: 5, lineTotal: 9500, receivedQty: 0, pendingQty: 55, code: "RM-006" },
     ],
     poSubtotal: 9500, totalTax: 475, grandTotal: 9975,
   },
@@ -111,9 +116,10 @@ const SEED_ORDERS: PurchaseOrder[] = [
     id: "PO-1007", vendor: "US Foods", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 38000, totalQty: 250,
     receivedQty: 180, pendingQty: 70, createdBy: "Meera", createdOn: "2026-01-10",
     lastUpdated: "2026-02-05", status: "Partially Received",
+    approvedOn: "2026-01-12", approvedBy: "Admin", prnId: "PRN-PO-1007",
     materials: [
-      { name: "Pasta 5kg", orderedQty: 100, unitPrice: 180, taxPct: 12, lineTotal: 18000, receivedQty: 80, pendingQty: 20 },
-      { name: "Cheese Block 5kg", orderedQty: 80, unitPrice: 150, taxPct: 12, lineTotal: 12000, receivedQty: 60, pendingQty: 20 },
+      { name: "Pasta 5kg", orderedQty: 100, unitPrice: 180, taxPct: 12, lineTotal: 18000, receivedQty: 80, pendingQty: 20, code: "RM-003" },
+      { name: "Cheese Block 5kg", orderedQty: 80, unitPrice: 150, taxPct: 12, lineTotal: 12000, receivedQty: 60, pendingQty: 20, code: "RM-007" },
       { name: "Cream 5L", orderedQty: 70, unitPrice: 114.29, taxPct: 12, lineTotal: 8000, receivedQty: 40, pendingQty: 30 },
     ],
     poSubtotal: 38000, totalTax: 4560, grandTotal: 42560,
@@ -123,6 +129,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     id: "PO-1008", vendor: "Fresh Direct", outlet: "Central Warehouse", supplierType: "Outlet", totalValue: 15000, totalQty: 100,
     receivedQty: 60, pendingQty: 40, createdBy: "Raj", createdOn: "2026-01-08",
     lastReceivingDate: "2026-02-03", status: "Partially Received",
+    approvedOn: "2026-01-10", approvedBy: "Admin", prnId: "PRN-PO-1008",
     materials: [
       { name: "Fresh Spinach 5kg", orderedQty: 50, unitPrice: 160, taxPct: 0, lineTotal: 8000, receivedQty: 30, pendingQty: 20 },
       { name: "Carrots 10kg", orderedQty: 50, unitPrice: 140, taxPct: 0, lineTotal: 7000, receivedQty: 30, pendingQty: 20 },
@@ -134,8 +141,9 @@ const SEED_ORDERS: PurchaseOrder[] = [
     id: "PO-1009", vendor: "Sysco Foods", outlet: "Main Kitchen", supplierType: "Vendor", totalValue: 27500, totalQty: 150,
     receivedQty: 150, createdBy: "Ankit", createdOn: "2025-12-20", status: "Closed",
     closedDate: "2026-01-15", closedBy: "Meera",
+    approvedOn: "2025-12-22", approvedBy: "Admin", prnId: "PRN-PO-1009",
     materials: [
-      { name: "Basmati Rice 25kg", orderedQty: 80, unitPrice: 220, taxPct: 5, lineTotal: 17600, receivedQty: 80, pendingQty: 0 },
+      { name: "Basmati Rice 25kg", orderedQty: 80, unitPrice: 220, taxPct: 5, lineTotal: 17600, receivedQty: 80, pendingQty: 0, code: "RM-001" },
       { name: "Lentils 25kg", orderedQty: 70, unitPrice: 141.43, taxPct: 5, lineTotal: 9900, receivedQty: 70, pendingQty: 0 },
     ],
     poSubtotal: 27500, totalTax: 1375, grandTotal: 28875,
@@ -145,6 +153,7 @@ const SEED_ORDERS: PurchaseOrder[] = [
     id: "PO-1010", vendor: "Metro Supply", outlet: "South Outlet", supplierType: "Vendor", totalValue: 11200, totalQty: 75,
     receivedQty: 75, createdBy: "Raj", createdOn: "2025-12-15", status: "Closed",
     closedDate: "2026-01-10", closedBy: "Ankit",
+    approvedOn: "2025-12-17", approvedBy: "Admin", prnId: "PRN-PO-1010",
     materials: [
       { name: "Red Chilli Powder 1kg", orderedQty: 75, unitPrice: 149.33, taxPct: 5, lineTotal: 11200, receivedQty: 75, pendingQty: 0 },
     ],
@@ -153,8 +162,8 @@ const SEED_ORDERS: PurchaseOrder[] = [
   },
   {
     id: "PO-1011", vendor: "US Foods", outlet: "Central Warehouse", supplierType: "Vendor", totalValue: 8900, totalQty: 40,
-    createdBy: "Meera", createdOn: "2025-12-10", status: "Cancelled",
-    cancelledDate: "2025-12-12", cancelledBy: "Ankit",
+    createdBy: "Meera", createdOn: "2025-12-10", status: "Rejected",
+    rejectedOn: "2025-12-12", rejectedBy: "Ankit",
     materials: [
       { name: "Soy Sauce 1L", orderedQty: 40, unitPrice: 222.5, taxPct: 12, lineTotal: 8900, receivedQty: 0, pendingQty: 40 },
     ],
@@ -162,8 +171,8 @@ const SEED_ORDERS: PurchaseOrder[] = [
   },
   {
     id: "PO-1012", vendor: "Fresh Direct", outlet: "Main Kitchen", supplierType: "Outlet", totalValue: 6200, totalQty: 30,
-    createdBy: "Raj", createdOn: "2025-12-05", status: "Cancelled",
-    cancelledDate: "2025-12-06", cancelledBy: "Meera",
+    createdBy: "Raj", createdOn: "2025-12-05", status: "Rejected",
+    rejectedOn: "2025-12-06", rejectedBy: "Meera",
     materials: [
       { name: "Bell Peppers 5kg", orderedQty: 30, unitPrice: 206.67, taxPct: 0, lineTotal: 6200, receivedQty: 0, pendingQty: 30 },
     ],
@@ -205,10 +214,12 @@ export function POStoreProvider({ children }: { children: React.ReactNode }) {
         const updates: Partial<PurchaseOrder> = { status, lastUpdated: now };
         if (status === "Approved") {
           updates.approvedOn = now;
+          updates.approvedBy = "Admin";
+          updates.prnId = `PRN-${o.id}`;
         }
-        if (status === "Cancelled") {
-          updates.cancelledDate = now;
-          updates.cancelledBy = "Admin";
+        if (status === "Rejected") {
+          updates.rejectedOn = now;
+          updates.rejectedBy = "Admin";
         }
         if (status === "Closed") {
           updates.closedDate = now;

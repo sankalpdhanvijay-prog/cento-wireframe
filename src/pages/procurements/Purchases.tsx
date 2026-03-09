@@ -16,7 +16,7 @@ const TAB_KEY: Record<string, POStatus> = {
   drafted: "Drafted",
   raised: "Raised",
   approved: "Approved",
-  cancelled: "Cancelled",
+  rejected: "Rejected",
 };
 
 const fmt = (n: number) =>
@@ -113,7 +113,7 @@ export default function Purchases() {
             <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
-      case "cancelled":
+      case "rejected":
         return (
           <>
             <TableHead className="w-[100px]">PO ID</TableHead>
@@ -121,8 +121,9 @@ export default function Purchases() {
             <TableHead>Vendor</TableHead>
             <TableHead>Outlet</TableHead>
             <TableHead className="text-right">Total Value</TableHead>
-            <TableHead>Cancelled Date</TableHead>
-            <TableHead>Cancelled By</TableHead>
+            <TableHead>Created By</TableHead>
+            <TableHead>Rejected On</TableHead>
+            <TableHead>Rejected By</TableHead>
             <TableHead className="w-[100px]">Action</TableHead>
           </>
         );
@@ -203,7 +204,7 @@ export default function Purchases() {
             <TableCell>{viewBtn(row)}</TableCell>
           </TableRow>
         );
-      case "cancelled":
+      case "rejected":
         return (
           <TableRow key={row.id} className="hover:bg-muted/20">
             <TableCell className="font-medium text-primary">{row.id}</TableCell>
@@ -211,8 +212,9 @@ export default function Purchases() {
             <TableCell>{row.vendor}</TableCell>
             <TableCell className="text-muted-foreground">{row.outlet}</TableCell>
             <TableCell className="text-right font-medium">{fmt(row.totalValue)}</TableCell>
-            <TableCell className="text-muted-foreground">{row.cancelledDate}</TableCell>
-            <TableCell>{row.cancelledBy}</TableCell>
+            <TableCell>{row.createdBy}</TableCell>
+            <TableCell className="text-muted-foreground">{row.rejectedOn}</TableCell>
+            <TableCell>{row.rejectedBy}</TableCell>
             <TableCell>{viewBtn(row)}</TableCell>
           </TableRow>
         );
@@ -237,7 +239,7 @@ export default function Purchases() {
               <TabsTrigger value="drafted" className="text-xs px-3 py-1.5">Drafted</TabsTrigger>
               <TabsTrigger value="raised" className="text-xs px-3 py-1.5">Raised</TabsTrigger>
               <TabsTrigger value="approved" className="text-xs px-3 py-1.5">Approved</TabsTrigger>
-              <TabsTrigger value="cancelled" className="text-xs px-3 py-1.5">Cancelled</TabsTrigger>
+              <TabsTrigger value="rejected" className="text-xs px-3 py-1.5">Rejected</TabsTrigger>
             </TabsList>
 
             <button

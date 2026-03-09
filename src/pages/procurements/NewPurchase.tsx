@@ -521,16 +521,12 @@ export default function NewPurchase() {
       const existingIds = new Set(prev.map((li) => li.materialId));
       const newItems = [...prev];
 
-      // Remove materials no longer selected
-      const selectedSet = new Set(materialIds);
-      const filtered = newItems.filter((li) => selectedSet.has(li.materialId));
-
-      // Add new materials
+      // Add-only: only append new materials, never remove existing rows
       materialIds.forEach((id) => {
         if (existingIds.has(id)) return;
         const mat = MOCK_MATERIALS.find((m) => m.id === id);
         if (!mat) return;
-        filtered.push({
+        newItems.push({
           id: crypto.randomUUID(),
           materialId: mat.id,
           code: mat.code,
@@ -549,7 +545,7 @@ export default function NewPurchase() {
         });
       });
 
-      return filtered;
+      return newItems;
     });
   }, [activeBulkTax]);
 
@@ -669,12 +665,12 @@ export default function NewPurchase() {
     } as const;
   };
 
-  const handleGenerate = () => {
+  const handleSubmitForApproval = () => {
     if (!deliveryDate) { setEddError(true); return; }
     setEddError(false);
     if (!hasItems || !supplierSelected) return;
     addOrder(buildOrderPayload("Raised"));
-    toast({ title: "PO Generated", description: "Purchase order has been raised." });
+    toast({ title: "PO Submitted", description: "Purchase order has been submitted for approval." });
     navigate("/procurements/purchases", { state: { tab: "raised" } });
   };
 
@@ -942,7 +938,16 @@ export default function NewPurchase() {
                       </Select>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground text-right tabular-nums">{item.currentStock}</td>
-                    <td className="px-4 py-4 text-right tabular-nums">₹{item.buyingPrice.toFixed(2)}</td>
+                    <td className="px-4 py-4">
+                      <Input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={item.buyingPrice || ""}
+                        onChange={(e) => updateItem(item.id, { buyingPrice: parseFloat(e.target.value) || 0 })}
+                        className="w-28 h-8 text-sm text-right bg-background"
+                      />
+                    </td>
                     <td className="px-4 py-4">
                       <Input
                         type="number"
@@ -1138,8 +1143,8 @@ export default function NewPurchase() {
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    disabled={!hasItems}
-                    className={cn("bg-background min-w-[100px]", !hasItems && "opacity-40 cursor-not-allowed")}
+                    disabled={!hasItems || !supplierSelected}
+                    className={cn("bg-background min-w-[100px]", (!hasItems || !supplierSelected) && "opacity-40 cursor-not-allowed")}
                     onClick={handleDraft}
                   >
                     Save as Draft
@@ -1148,9 +1153,9 @@ export default function NewPurchase() {
                     variant="cento"
                     disabled={!canGenerate}
                     className={cn("min-w-[120px]", !canGenerate && "opacity-40 cursor-not-allowed")}
-                    onClick={handleGenerate}
+                    onClick={handleSubmitForApproval}
                   >
-                    Generate PO
+                    Submit for Approval
                   </Button>
                 </div>
               </div>
