@@ -187,7 +187,6 @@ export default function ReceiveOrder() {
   }, [materials]);
 
   const shortItems = materials.filter((m) => m.acceptedQty < m.pendingQty);
-  const isOutletOrTransfer = order?.orderType === "Outlet" || order?.orderType === "Transfer";
 
   const canSubmit = useMemo(() => {
     if (!materials.some((r) => r.acceptedQty > 0) || materials.length === 0 || materials.some((r) => r.hasError)) return false;
