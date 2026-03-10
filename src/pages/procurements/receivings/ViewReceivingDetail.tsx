@@ -84,6 +84,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     id: "2",
     grnId: "GRN-2026-002",
     receivingType: "Direct",
+    orderType: "Vendor",
     vendor: "Spice World Traders",
     outlet: "Main Kitchen",
     totalValue: 8750,
