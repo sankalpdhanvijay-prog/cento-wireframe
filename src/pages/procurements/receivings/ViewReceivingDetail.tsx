@@ -22,6 +22,7 @@ interface GRNMaterial {
   shortRemarks?: string;
   excessReason?: string;
   excessRemarks?: string;
+  wastageQty?: number;
 }
 
 interface GRNDetail {
