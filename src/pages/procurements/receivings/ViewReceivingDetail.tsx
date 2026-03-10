@@ -119,7 +119,8 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     poCreatedOn: "2026-01-15",
     status: "Received",
     materials: [
-      { name: "Mozzarella Cheese", orderedQty: 80, receivedQty: 80, pendingQty: 0, unitPrice: 360, taxPercent: 12, taxAmount: 3456, total: 28800 },
+      { name: "Mozzarella Cheese", orderedQty: 80, receivedQty: 70, pendingQty: 10, unitPrice: 360, taxPercent: 12, taxAmount: 3024, total: 25200, shortReason: "Damaged", shortRemarks: "Packaging torn", wastageQty: 8 },
+      { name: "Paneer Block", orderedQty: 20, receivedQty: 20, pendingQty: 0, unitPrice: 180, taxPercent: 12, taxAmount: 432, total: 3600 },
     ],
     subtotal: 25344,
     totalTax: 3456,
