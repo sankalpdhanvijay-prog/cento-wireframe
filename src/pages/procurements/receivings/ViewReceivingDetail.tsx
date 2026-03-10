@@ -22,6 +22,7 @@ interface GRNMaterial {
   shortRemarks?: string;
   excessReason?: string;
   excessRemarks?: string;
+  wastageQty?: number;
 }
 
 interface GRNDetail {
@@ -29,6 +30,7 @@ interface GRNDetail {
   grnId: string;
   poId?: string;
   receivingType: "PO-Based" | "Direct";
+  orderType?: "Vendor" | "Outlet" | "Transfer";
   vendor: string;
   outlet: string;
   totalValue: number;
@@ -56,6 +58,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     grnId: "GRN-2026-001",
     poId: "PO-1001",
     receivingType: "PO-Based",
+    orderType: "Vendor",
     vendor: "Fresh Farms Pvt Ltd",
     outlet: "Main Kitchen",
     totalValue: 32500,
@@ -81,6 +84,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     id: "2",
     grnId: "GRN-2026-002",
     receivingType: "Direct",
+    orderType: "Vendor",
     vendor: "Spice World Traders",
     outlet: "Main Kitchen",
     totalValue: 8750,
@@ -103,6 +107,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     grnId: "GRN-2026-003",
     poId: "PO-1002",
     receivingType: "PO-Based",
+    orderType: "Outlet",
     vendor: "Daily Dairy Supplies",
     outlet: "Branch - Indiranagar",
     totalValue: 28800,
@@ -114,7 +119,8 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     poCreatedOn: "2026-01-15",
     status: "Received",
     materials: [
-      { name: "Mozzarella Cheese", orderedQty: 80, receivedQty: 80, pendingQty: 0, unitPrice: 360, taxPercent: 12, taxAmount: 3456, total: 28800 },
+      { name: "Mozzarella Cheese", orderedQty: 80, receivedQty: 70, pendingQty: 10, unitPrice: 360, taxPercent: 12, taxAmount: 3024, total: 25200, shortReason: "Damaged", shortRemarks: "Packaging torn", wastageQty: 8 },
+      { name: "Paneer Block", orderedQty: 20, receivedQty: 20, pendingQty: 0, unitPrice: 180, taxPercent: 12, taxAmount: 432, total: 3600 },
     ],
     subtotal: 25344,
     totalTax: 3456,
@@ -124,6 +130,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     id: "4",
     grnId: "GRN-2026-004",
     receivingType: "Direct",
+    orderType: "Vendor",
     vendor: "Fresh Farms Pvt Ltd",
     outlet: "Branch - Koramangala",
     totalValue: 4200,
@@ -147,6 +154,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     grnId: "GRN-2026-005",
     poId: "PO-1003",
     receivingType: "PO-Based",
+    orderType: "Transfer",
     vendor: "Daily Dairy Supplies",
     outlet: "Main Kitchen",
     totalValue: 54000,
@@ -160,8 +168,8 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     lastUpdated: "2026-02-11",
     status: "Partially Received",
     materials: [
-      { name: "Cream 5L", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000 },
-      { name: "Butter 1kg", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000 },
+      { name: "Cream 5L", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000, shortReason: "Short Supply", shortRemarks: "Partial batch", wastageQty: 5 },
+      { name: "Butter 1kg", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000, shortReason: "Damaged", wastageQty: 10 },
     ],
     subtotal: 48168,
     totalTax: 5832,
@@ -172,6 +180,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     grnId: "GRN-2026-006",
     poId: "PO-1004",
     receivingType: "PO-Based",
+    orderType: "Vendor",
     vendor: "Spice World Traders",
     outlet: "Main Kitchen",
     totalValue: 12000,
@@ -357,18 +366,24 @@ export default function ViewReceivingDetail() {
             <CardTitle className="text-base font-semibold text-amber-700">Short Supply Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {shortItems.map((m, i) => (
-              <div key={i} className="rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3 space-y-1">
-                <p className="text-sm font-medium text-foreground">{m.name}</p>
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Ordered: <strong>{m.orderedQty}</strong></span>
-                  <span>Accepted: <strong>{m.receivedQty}</strong></span>
-                  <span>Short: <strong className="text-amber-700">{m.orderedQty - m.receivedQty}</strong></span>
+            {shortItems.map((m, i) => {
+              const isOutletOrTransfer = grn.orderType === "Outlet" || grn.orderType === "Transfer";
+              return (
+                <div key={i} className="rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3 space-y-1">
+                  <p className="text-sm font-medium text-foreground">{m.name}</p>
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <span>Ordered: <strong>{m.orderedQty}</strong></span>
+                    <span>Accepted: <strong>{m.receivedQty}</strong></span>
+                    <span>Short: <strong className="text-amber-700">{m.orderedQty - m.receivedQty}</strong></span>
+                  </div>
+                  {m.shortReason && <p className="text-xs">Reason: <span className="font-medium">{m.shortReason}</span></p>}
+                  {isOutletOrTransfer && m.wastageQty !== undefined && (
+                    <p className="text-xs">Wastage Qty: <span className="font-medium text-amber-700">{m.wastageQty}</span></p>
+                  )}
+                  {m.shortRemarks && <p className="text-xs text-muted-foreground">Remarks: {m.shortRemarks}</p>}
                 </div>
-                {m.shortReason && <p className="text-xs">Reason: <span className="font-medium">{m.shortReason}</span></p>}
-                {m.shortRemarks && <p className="text-xs text-muted-foreground">Remarks: {m.shortRemarks}</p>}
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}

@@ -76,6 +76,7 @@ interface MaterialRow {
   poUnitPrice: number; invoiceUnitPrice: number;
   taxes: TaxEntry[]; totalTaxAmount: number; lineTotal: number; totalLineAmount: number;
   hasError: boolean; shortReason: string; shortRemarks: string;
+  wastageQty: number; wastageError: boolean;
 }
 
 interface OtherCharge { id: string; reason: string; value: number; taxes: TaxEntry[]; }
@@ -103,6 +104,7 @@ export default function ReceiveOrder() {
       taxes: [{ id: crypto.randomUUID(), taxTypeId: "", taxName: m.defaultTax.name, taxRate: m.defaultTax.rate }],
       totalTaxAmount: 0, lineTotal: 0, totalLineAmount: 0,
       hasError: false, shortReason: "", shortRemarks: "",
+      wastageQty: 0, wastageError: false,
     }))
   );
   const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([]);
@@ -113,6 +115,8 @@ export default function ReceiveOrder() {
   const [taxModalTypeId, setTaxModalTypeId] = useState("");
 
   const receivingId = useMemo(() => "GRN-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
+
+  const isOutletOrTransfer = order?.orderType === "Outlet" || order?.orderType === "Transfer";
 
   const updateMaterial = useCallback((id: string, updates: Partial<MaterialRow>) => {
     setMaterials((prev) => prev.map((r) => {
@@ -127,9 +131,20 @@ export default function ReceiveOrder() {
         });
         return r;
       }
+      // Auto-default wastageQty for Outlet/Transfer when acceptedQty changes and creates short
+      if (updates.acceptedQty !== undefined && isOutletOrTransfer) {
+        const newAccepted = updates.acceptedQty;
+        if (newAccepted < r.pendingQty) {
+          updated.wastageQty = r.pendingQty - newAccepted;
+          updated.wastageError = false;
+        } else {
+          updated.wastageQty = 0;
+          updated.wastageError = false;
+        }
+      }
       return recalcRow(updated);
     }));
-  }, []);
+  }, [isOutletOrTransfer]);
 
   const addTaxToRow = () => {
     if (!taxModal || !taxModalTypeId) return;
@@ -172,7 +187,16 @@ export default function ReceiveOrder() {
   }, [materials]);
 
   const shortItems = materials.filter((m) => m.acceptedQty < m.pendingQty);
-  const canSubmit = materials.some((r) => r.acceptedQty > 0) && materials.length > 0 && !materials.some((r) => r.hasError);
+
+  const canSubmit = useMemo(() => {
+    if (!materials.some((r) => r.acceptedQty > 0) || materials.length === 0 || materials.some((r) => r.hasError)) return false;
+    // All short items must have a reason
+    const shorts = materials.filter((m) => m.acceptedQty < m.pendingQty);
+    if (shorts.some((s) => !s.shortReason)) return false;
+    // For Outlet/Transfer, wastageQty must be explicitly set (not blank) and valid
+    if (isOutletOrTransfer && shorts.some((s) => s.wastageError || (s.acceptedQty + s.wastageQty) > s.pendingQty)) return false;
+    return true;
+  }, [materials, isOutletOrTransfer]);
 
   if (!order) {
     return (
@@ -311,14 +335,50 @@ export default function ReceiveOrder() {
                       <span className="text-sm font-medium">{item.name}</span>
                       <span className="text-xs text-muted-foreground">Short: <span className="font-semibold text-amber-700">{shortQty}</span> (of {item.pendingQty} pending)</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Read-only fields */}
+                    <div className="grid grid-cols-3 gap-3 mb-3">
                       <div>
-                        <label className="text-xs text-muted-foreground mb-1.5 block">Reason <span className="text-destructive">*</span></label>
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 block">Material Name</label>
+                        <p className="text-sm font-medium">{item.name}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 block">{isOutletOrTransfer ? "Dispatch Pending Qty" : "Pending Qty"}</label>
+                        <p className="text-sm font-medium text-amber-700">{item.pendingQty}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 block">Accepted Qty</label>
+                        <p className="text-sm font-medium text-emerald-700">{item.acceptedQty}</p>
+                      </div>
+                    </div>
+                    <div className={cn("grid gap-3", isOutletOrTransfer ? "grid-cols-3" : "grid-cols-2")}>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1.5 block">Short Reason <span className="text-destructive">*</span></label>
                         <Select value={item.shortReason} onValueChange={(v) => updateMaterial(item.id, { shortReason: v })}>
                           <SelectTrigger className="bg-card text-sm"><SelectValue placeholder="Select reason" /></SelectTrigger>
                           <SelectContent>{SHORT_SUPPLY_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
+                      {isOutletOrTransfer && (
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1.5 block">Mark Pending Units as Wastage <span className="text-destructive">*</span></label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={shortQty}
+                            value={item.wastageQty}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? -1 : parseFloat(e.target.value);
+                              const wastageError = val < 0 || val > shortQty;
+                              updateMaterial(item.id, { wastageQty: val < 0 ? 0 : val, wastageError: val < 0 || val > shortQty });
+                            }}
+                            className={cn("bg-card text-sm", item.wastageError && "border-destructive")}
+                          />
+                          {item.wastageQty > shortQty && (
+                            <p className="text-[10px] text-destructive mt-1">Cannot exceed short qty ({shortQty})</p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-1">Set to 0 if a follow-up delivery is expected.</p>
+                        </div>
+                      )}
                       <div>
                         <label className="text-xs text-muted-foreground mb-1.5 block">Remarks</label>
                         <Input value={item.shortRemarks} onChange={(e) => updateMaterial(item.id, { shortRemarks: e.target.value })} placeholder="Optional" className="bg-card text-sm" />
