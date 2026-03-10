@@ -107,6 +107,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     grnId: "GRN-2026-003",
     poId: "PO-1002",
     receivingType: "PO-Based",
+    orderType: "Outlet",
     vendor: "Daily Dairy Supplies",
     outlet: "Branch - Indiranagar",
     totalValue: 28800,
