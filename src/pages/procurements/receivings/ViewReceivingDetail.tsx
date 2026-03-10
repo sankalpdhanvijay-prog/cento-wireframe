@@ -30,6 +30,7 @@ interface GRNDetail {
   grnId: string;
   poId?: string;
   receivingType: "PO-Based" | "Direct";
+  orderType?: "Vendor" | "Outlet" | "Transfer";
   vendor: string;
   outlet: string;
   totalValue: number;
