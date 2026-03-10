@@ -323,14 +323,50 @@ export default function ReceiveOrder() {
                       <span className="text-sm font-medium">{item.name}</span>
                       <span className="text-xs text-muted-foreground">Short: <span className="font-semibold text-amber-700">{shortQty}</span> (of {item.pendingQty} pending)</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Read-only fields */}
+                    <div className="grid grid-cols-3 gap-3 mb-3">
                       <div>
-                        <label className="text-xs text-muted-foreground mb-1.5 block">Reason <span className="text-destructive">*</span></label>
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 block">Material Name</label>
+                        <p className="text-sm font-medium">{item.name}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 block">{isOutletOrTransfer ? "Dispatch Pending Qty" : "Pending Qty"}</label>
+                        <p className="text-sm font-medium text-amber-700">{item.pendingQty}</p>
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5 block">Accepted Qty</label>
+                        <p className="text-sm font-medium text-emerald-700">{item.acceptedQty}</p>
+                      </div>
+                    </div>
+                    <div className={cn("grid gap-3", isOutletOrTransfer ? "grid-cols-3" : "grid-cols-2")}>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1.5 block">Short Reason <span className="text-destructive">*</span></label>
                         <Select value={item.shortReason} onValueChange={(v) => updateMaterial(item.id, { shortReason: v })}>
                           <SelectTrigger className="bg-card text-sm"><SelectValue placeholder="Select reason" /></SelectTrigger>
                           <SelectContent>{SHORT_SUPPLY_REASONS.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                         </Select>
                       </div>
+                      {isOutletOrTransfer && (
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1.5 block">Mark Pending Units as Wastage <span className="text-destructive">*</span></label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={shortQty}
+                            value={item.wastageQty}
+                            onChange={(e) => {
+                              const val = e.target.value === "" ? -1 : parseFloat(e.target.value);
+                              const wastageError = val < 0 || val > shortQty;
+                              updateMaterial(item.id, { wastageQty: val < 0 ? 0 : val, wastageError: val < 0 || val > shortQty });
+                            }}
+                            className={cn("bg-card text-sm", item.wastageError && "border-destructive")}
+                          />
+                          {item.wastageQty > shortQty && (
+                            <p className="text-[10px] text-destructive mt-1">Cannot exceed short qty ({shortQty})</p>
+                          )}
+                          <p className="text-[10px] text-muted-foreground mt-1">Set to 0 if a follow-up delivery is expected.</p>
+                        </div>
+                      )}
                       <div>
                         <label className="text-xs text-muted-foreground mb-1.5 block">Remarks</label>
                         <Input value={item.shortRemarks} onChange={(e) => updateMaterial(item.id, { shortRemarks: e.target.value })} placeholder="Optional" className="bg-card text-sm" />

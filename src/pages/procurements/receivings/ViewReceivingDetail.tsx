@@ -366,18 +366,24 @@ export default function ViewReceivingDetail() {
             <CardTitle className="text-base font-semibold text-amber-700">Short Supply Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {shortItems.map((m, i) => (
-              <div key={i} className="rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3 space-y-1">
-                <p className="text-sm font-medium text-foreground">{m.name}</p>
-                <div className="flex gap-4 text-xs text-muted-foreground">
-                  <span>Ordered: <strong>{m.orderedQty}</strong></span>
-                  <span>Accepted: <strong>{m.receivedQty}</strong></span>
-                  <span>Short: <strong className="text-amber-700">{m.orderedQty - m.receivedQty}</strong></span>
+            {shortItems.map((m, i) => {
+              const isOutletOrTransfer = grn.orderType === "Outlet" || grn.orderType === "Transfer";
+              return (
+                <div key={i} className="rounded-lg border border-amber-200 bg-amber-50/50 px-4 py-3 space-y-1">
+                  <p className="text-sm font-medium text-foreground">{m.name}</p>
+                  <div className="flex gap-4 text-xs text-muted-foreground">
+                    <span>Ordered: <strong>{m.orderedQty}</strong></span>
+                    <span>Accepted: <strong>{m.receivedQty}</strong></span>
+                    <span>Short: <strong className="text-amber-700">{m.orderedQty - m.receivedQty}</strong></span>
+                  </div>
+                  {m.shortReason && <p className="text-xs">Reason: <span className="font-medium">{m.shortReason}</span></p>}
+                  {isOutletOrTransfer && m.wastageQty !== undefined && (
+                    <p className="text-xs">Wastage Qty: <span className="font-medium text-amber-700">{m.wastageQty}</span></p>
+                  )}
+                  {m.shortRemarks && <p className="text-xs text-muted-foreground">Remarks: {m.shortRemarks}</p>}
                 </div>
-                {m.shortReason && <p className="text-xs">Reason: <span className="font-medium">{m.shortReason}</span></p>}
-                {m.shortRemarks && <p className="text-xs text-muted-foreground">Remarks: {m.shortRemarks}</p>}
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
