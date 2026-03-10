@@ -58,6 +58,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     grnId: "GRN-2026-001",
     poId: "PO-1001",
     receivingType: "PO-Based",
+    orderType: "Vendor",
     vendor: "Fresh Farms Pvt Ltd",
     outlet: "Main Kitchen",
     totalValue: 32500,
