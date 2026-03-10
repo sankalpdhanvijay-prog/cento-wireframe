@@ -180,6 +180,7 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     grnId: "GRN-2026-006",
     poId: "PO-1004",
     receivingType: "PO-Based",
+    orderType: "Vendor",
     vendor: "Spice World Traders",
     outlet: "Main Kitchen",
     totalValue: 12000,
