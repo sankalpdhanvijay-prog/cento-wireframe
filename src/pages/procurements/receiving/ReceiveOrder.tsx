@@ -174,7 +174,17 @@ export default function ReceiveOrder() {
   }, [materials]);
 
   const shortItems = materials.filter((m) => m.acceptedQty < m.pendingQty);
-  const canSubmit = materials.some((r) => r.acceptedQty > 0) && materials.length > 0 && !materials.some((r) => r.hasError);
+  const isOutletOrTransfer = order?.orderType === "Outlet" || order?.orderType === "Transfer";
+
+  const canSubmit = useMemo(() => {
+    if (!materials.some((r) => r.acceptedQty > 0) || materials.length === 0 || materials.some((r) => r.hasError)) return false;
+    // All short items must have a reason
+    const shorts = materials.filter((m) => m.acceptedQty < m.pendingQty);
+    if (shorts.some((s) => !s.shortReason)) return false;
+    // For Outlet/Transfer, wastageQty must be explicitly set (not blank) and valid
+    if (isOutletOrTransfer && shorts.some((s) => s.wastageError || (s.acceptedQty + s.wastageQty) > s.pendingQty)) return false;
+    return true;
+  }, [materials, isOutletOrTransfer]);
 
   if (!order) {
     return (
