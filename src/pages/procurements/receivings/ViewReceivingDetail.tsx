@@ -168,8 +168,8 @@ const MOCK_GRN_DETAILS: GRNDetail[] = [
     lastUpdated: "2026-02-11",
     status: "Partially Received",
     materials: [
-      { name: "Cream 5L", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000 },
-      { name: "Butter 1kg", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000 },
+      { name: "Cream 5L", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000, shortReason: "Short Supply", shortRemarks: "Partial batch", wastageQty: 5 },
+      { name: "Butter 1kg", orderedQty: 100, receivedQty: 90, pendingQty: 10, unitPrice: 270, taxPercent: 12, taxAmount: 2916, total: 27000, shortReason: "Damaged", wastageQty: 10 },
     ],
     subtotal: 48168,
     totalTax: 5832,
