@@ -116,6 +116,8 @@ export default function ReceiveOrder() {
 
   const receivingId = useMemo(() => "GRN-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
 
+  const isOutletOrTransfer = order?.orderType === "Outlet" || order?.orderType === "Transfer";
+
   const updateMaterial = useCallback((id: string, updates: Partial<MaterialRow>) => {
     setMaterials((prev) => prev.map((r) => {
       if (r.id !== id) return r;
@@ -129,9 +131,20 @@ export default function ReceiveOrder() {
         });
         return r;
       }
+      // Auto-default wastageQty for Outlet/Transfer when acceptedQty changes and creates short
+      if (updates.acceptedQty !== undefined && isOutletOrTransfer) {
+        const newAccepted = updates.acceptedQty;
+        if (newAccepted < r.pendingQty) {
+          updated.wastageQty = r.pendingQty - newAccepted;
+          updated.wastageError = false;
+        } else {
+          updated.wastageQty = 0;
+          updated.wastageError = false;
+        }
+      }
       return recalcRow(updated);
     }));
-  }, []);
+  }, [isOutletOrTransfer]);
 
   const addTaxToRow = () => {
     if (!taxModal || !taxModalTypeId) return;
