@@ -104,6 +104,7 @@ export default function ReceiveOrder() {
       taxes: [{ id: crypto.randomUUID(), taxTypeId: "", taxName: m.defaultTax.name, taxRate: m.defaultTax.rate }],
       totalTaxAmount: 0, lineTotal: 0, totalLineAmount: 0,
       hasError: false, shortReason: "", shortRemarks: "",
+      wastageQty: 0, wastageError: false,
     }))
   );
   const [otherCharges, setOtherCharges] = useState<OtherCharge[]>([]);
