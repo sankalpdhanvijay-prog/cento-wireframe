@@ -76,6 +76,7 @@ interface MaterialRow {
   poUnitPrice: number; invoiceUnitPrice: number;
   taxes: TaxEntry[]; totalTaxAmount: number; lineTotal: number; totalLineAmount: number;
   hasError: boolean; shortReason: string; shortRemarks: string;
+  wastageQty: number; wastageError: boolean;
 }
 
 interface OtherCharge { id: string; reason: string; value: number; taxes: TaxEntry[]; }
