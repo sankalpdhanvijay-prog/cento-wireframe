@@ -660,6 +660,23 @@ export default function Settings() {
   const activeSub = settingsSubModules.find((s) => s.path === activeSection);
   const isMaterialManagement = activeSection === "/settings/material-management";
   const isVendorManagement = activeSection === "/settings/vendor-management";
+  const isOutletManagement = activeSection === "/settings/outlets";
+  const isUserManagement = activeSection === "/settings/user-management";
+  const isTaxManagement = activeSection === "/settings/tax";
+  const isUnitManagement = activeSection === "/settings/units";
+  const isAuditWastage = activeSection === "/settings/audit-wastage";
+
+  const renderContent = () => {
+    if (isOutletManagement) return <OutletManagement />;
+    if (isUserManagement) return <UserManagement />;
+    if (isMaterialManagement) return <MaterialManagementContent editMaterialCode={editMaterialCode} scrollToEdit={scrollToEdit} />;
+    if (isVendorManagement) return <VendorManagementContent editVendorId={editVendorId} scrollToEdit={scrollToEdit} />;
+    if (isTaxManagement) return <TaxManagement />;
+    if (isUnitManagement) return <UnitManagement />;
+    if (isAuditWastage) return <AuditWastageManagement />;
+    if (activeSub) return <SettingsContent title={activeSub.title} />;
+    return null;
+  };
 
   return (
     <div className="flex h-full -m-6">
@@ -674,13 +691,7 @@ export default function Settings() {
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto">
-        {isMaterialManagement ? (
-          <MaterialManagementContent editMaterialCode={editMaterialCode} scrollToEdit={scrollToEdit} />
-        ) : isVendorManagement ? (
-          <VendorManagementContent editVendorId={editVendorId} scrollToEdit={scrollToEdit} />
-        ) : (
-          activeSub && <SettingsContent title={activeSub.title} />
-        )}
+        {renderContent()}
       </div>
     </div>
   );
