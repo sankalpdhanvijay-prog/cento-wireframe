@@ -104,14 +104,13 @@ export const settingsModule: NavModule = {
 
 export const settingsSubModules = [
   { title: "Outlet Management", path: "/settings/outlets" },
+  { title: "User Management", path: "/settings/user-management" },
   { title: "Material Management", path: "/settings/material-management" },
-  { title: "Recipe Management", path: "/settings/recipe-management" },
   { title: "Vendor Management", path: "/settings/vendor-management" },
-  { title: "POS Sync Configs", path: "/settings/pos-sync" },
+  { title: "Orders Management", path: "/settings/orders-management" },
+  { title: "Recipe Management", path: "/settings/recipe-management" },
   { title: "Unit Management", path: "/settings/units" },
   { title: "Tax Management", path: "/settings/tax" },
-  { title: "Roles & Permissions", path: "/settings/roles" },
-  { title: "Purchase Preferences", path: "/settings/purchase-preferences" },
-  { title: "Audit Management", path: "/settings/audit-management" },
-  { title: "Wastage Management", path: "/settings/wastage-management" },
+  { title: "Audit & Wastage Management", path: "/settings/audit-wastage" },
+  { title: "User Roles & Permissions", path: "/settings/roles" },
 ];
