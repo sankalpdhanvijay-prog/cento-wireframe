@@ -254,6 +254,27 @@ export default function ReceiveOrder() {
             <KV label="Received Qty" value={String(order.receivedQty)} />
             <KV label="Pending Qty" value={String(order.pendingQty)} highlight />
           </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Invoice Number</Label>
+              <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} placeholder="Enter invoice number" className="h-9 text-sm bg-card" />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Upload Invoice</Label>
+              <div className="flex items-center gap-2">
+                <label className={cn("flex items-center gap-2 px-3 h-9 w-full rounded-md border border-input bg-card text-sm cursor-pointer hover:bg-muted/40 transition-colors", invoiceFile ? "text-foreground" : "text-muted-foreground")}>
+                  <Upload className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate text-xs">{invoiceFile ? invoiceFile.name : "Upload file"}</span>
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)} />
+                </label>
+                {invoiceFile && (
+                  <button onClick={() => setInvoiceFile(null)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Material Receiving Table */}

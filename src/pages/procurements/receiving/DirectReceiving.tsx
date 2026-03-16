@@ -400,8 +400,7 @@ export default function DirectReceiving() {
       </div>
 
       {/* Sticky Footer */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border py-3 -mx-1 px-1 flex items-center justify-between">
-        <Button variant="outline" className="text-sm">Save Draft</Button>
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border py-3 -mx-1 px-1 flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={() => navigate("/procurements/receivings")} className="text-sm">Cancel</Button>
           <Button variant="cento" disabled={!canSubmit} onClick={() => setShowSubmitDialog(true)} className="text-sm">Submit Receiving</Button>
