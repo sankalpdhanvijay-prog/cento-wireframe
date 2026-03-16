@@ -117,7 +117,7 @@ export default function DirectReceiving() {
   const [taxModalRowId, setTaxModalRowId] = useState<string | null>(null);
   const [taxModalTypeId, setTaxModalTypeId] = useState("");
 
-  const receivingId = useMemo(() => "RCV-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
+  const grnId = useMemo(() => "GRN-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
 
   const filteredMaterials = useMemo(() => {
     if (!materialSearch.trim()) return [];
