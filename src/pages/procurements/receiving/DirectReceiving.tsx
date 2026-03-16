@@ -266,8 +266,19 @@ export default function DirectReceiving() {
               </Popover>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Reference Invoice File</Label>
-              <Input type="url" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" className="bg-card" />
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Invoice File</Label>
+              <div className="flex items-center gap-2">
+                <label className={cn("flex items-center gap-2 px-3 h-10 w-full rounded-md border border-input bg-card text-sm cursor-pointer hover:bg-muted/40 transition-colors", invoiceFile ? "text-foreground" : "text-muted-foreground")}>
+                  <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="truncate">{invoiceFile ? invoiceFile.name : "Upload invoice file"}</span>
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)} />
+                </label>
+                {invoiceFile && (
+                  <button onClick={() => setInvoiceFile(null)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
