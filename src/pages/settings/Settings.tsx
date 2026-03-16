@@ -447,6 +447,34 @@ function VendorFormSection({ form, setForm }: { form: VendorForm; setForm: (f: V
 // ══════════════════════════════════════════════════════════════
 // Settings Content Sections
 // ══════════════════════════════════════════════════════════════
+function OrdersManagementContent() {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="cento-page-title">Orders Management</h2>
+        <Select value="all" onValueChange={() => {}}>
+          <SelectTrigger className="w-[200px] h-9 text-xs bg-card">
+            <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Outlets</SelectItem>
+            {MOCK_OUTLETS.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="cento-card">
+        <h3 className="cento-section-header mb-5">Configuration</h3>
+        <div className="cento-empty-state">
+          <div className="h-10 w-10 rounded-xl bg-cento-yellow-tint flex items-center justify-center mb-3"><SettingsIcon className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} /></div>
+          <p className="text-sm font-medium text-foreground">Orders Management</p>
+          <p className="text-xs text-muted-foreground mt-1">Configure your orders management settings here.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsContent({ title }: { title: string }) {
   return (
     <div className="space-y-5">
@@ -461,6 +489,7 @@ function SettingsContent({ title }: { title: string }) {
       </div>
     </div>
   );
+}
 }
 
 function MaterialManagementContent({ editMaterialCode, scrollToEdit }: { editMaterialCode?: string; scrollToEdit?: boolean }) {
