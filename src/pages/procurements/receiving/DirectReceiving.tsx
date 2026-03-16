@@ -210,26 +210,22 @@ export default function DirectReceiving() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <Select value={outlet} onValueChange={setOutlet} disabled={!isAdmin}>
-              <SelectTrigger className="w-[170px] h-9 text-xs bg-card">
-                <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MOCK_OUTLETS.map((o) =>
-                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            <span className="text-xs text-muted-foreground font-mono">{receivingId}</span>
-            <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">Draft</Badge>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-muted/40">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">PO Creation Date:</span>
-              <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium text-foreground">{format(receivingDate, "dd MMM yyyy")}</span>
+            <div>
+              <h1 className="text-lg font-semibold text-foreground leading-tight">Direct Receiving</h1>
+              <p className="text-xs text-muted-foreground">Receive materials directly without a Purchase Order.</p>
             </div>
           </div>
-          <Badge variant="outline" className="text-[10px] border-border bg-muted/50 text-muted-foreground">Direct Receiving</Badge>
+          <Select value={outlet} onValueChange={setOutlet} disabled={!isAdmin}>
+            <SelectTrigger className="w-[170px] h-9 text-xs bg-card">
+              <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MOCK_OUTLETS.map((o) =>
+                <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
