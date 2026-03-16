@@ -96,6 +96,8 @@ export default function ReceiveOrder() {
   const order = MOCK_ORDERS.find((o) => o.id === id);
 
   const [receivingDate, setReceivingDate] = useState<Date>(new Date());
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [materials, setMaterials] = useState<MaterialRow[]>(() =>
     MOCK_MATERIALS.slice(0, 3).map((m) => recalcRow({
       id: crypto.randomUUID(), materialId: m.id, code: m.code, name: m.name, unit: m.unit,
