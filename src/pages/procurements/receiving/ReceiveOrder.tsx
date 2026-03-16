@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import {
-  ArrowLeft, Search, CalendarIcon, Plus, X, Trash2, AlertTriangle,
+  ArrowLeft, Search, CalendarIcon, Plus, X, Trash2, AlertTriangle, Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
