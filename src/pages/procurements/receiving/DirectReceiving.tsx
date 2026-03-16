@@ -104,11 +104,10 @@ export default function DirectReceiving() {
   const isAdmin = true;
 
   const [outlet, setOutlet] = useState("o1");
-  const [receivingDate, setReceivingDate] = useState<Date>(new Date());
   const [vendor, setVendor] = useState<string>("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
-  const [reference, setReference] = useState("");
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [materials, setMaterials] = useState<DirectMaterialRow[]>([]);
   const [materialSearch, setMaterialSearch] = useState("");
   const [materialSearchFocused, setMaterialSearchFocused] = useState(false);
