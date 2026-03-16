@@ -590,7 +590,19 @@ function VendorManagementContent({ editVendorId, scrollToEdit }: { editVendorId?
 
   return (
     <div className="space-y-8">
-      <h2 className="cento-page-title">Vendor Management</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="cento-page-title">Vendor Management</h2>
+        <Select value="all" onValueChange={() => {}}>
+          <SelectTrigger className="w-[200px] h-9 text-xs bg-card">
+            <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Outlets</SelectItem>
+            {MOCK_OUTLETS.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* ADD VENDOR */}
       <div className="cento-card">
