@@ -704,10 +704,11 @@ function VendorManagementContent({ editVendorId, scrollToEdit }: { editVendorId?
 // ══════════════════════════════════════════════════════════════
 export default function Settings() {
   const location = useLocation();
-  const state = location.state as { section?: string; editMaterial?: string; editVendor?: string; scrollToEdit?: boolean } | null;
+  const state = location.state as { section?: string; editMaterial?: string; editVendor?: string; editRecipe?: string; scrollToEdit?: boolean } | null;
   const sectionFromState = state?.section;
   const editMaterialCode = state?.editMaterial;
   const editVendorId = state?.editVendor;
+  const editRecipeId = state?.editRecipe;
   const scrollToEdit = state?.scrollToEdit;
   const [activeSection, setActiveSection] = useState(sectionFromState || settingsSubModules[0].path);
 
@@ -719,6 +720,8 @@ export default function Settings() {
   const isTaxManagement = activeSection === "/settings/tax";
   const isUnitManagement = activeSection === "/settings/units";
   const isAuditWastage = activeSection === "/settings/audit-wastage";
+  const isRecipeManagement = activeSection === "/settings/recipe-management";
+  const isOrdersManagement = activeSection === "/settings/orders-management";
 
   const renderContent = () => {
     if (isOutletManagement) return <OutletManagement />;
@@ -728,6 +731,8 @@ export default function Settings() {
     if (isTaxManagement) return <TaxManagement />;
     if (isUnitManagement) return <UnitManagement />;
     if (isAuditWastage) return <AuditWastageManagement />;
+    if (isRecipeManagement) return <RecipeManagement editRecipeId={editRecipeId} scrollToEdit={scrollToEdit} />;
+    if (isOrdersManagement) return <OrdersManagementContent />;
     if (activeSub) return <SettingsContent title={activeSub.title} />;
     return null;
   };
