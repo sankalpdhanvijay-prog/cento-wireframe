@@ -8,6 +8,7 @@ import {
   MapPin,
   Plus,
   X,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,11 +104,10 @@ export default function DirectReceiving() {
   const isAdmin = true;
 
   const [outlet, setOutlet] = useState("o1");
-  const [receivingDate, setReceivingDate] = useState<Date>(new Date());
   const [vendor, setVendor] = useState<string>("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState<Date>(new Date());
-  const [reference, setReference] = useState("");
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [materials, setMaterials] = useState<DirectMaterialRow[]>([]);
   const [materialSearch, setMaterialSearch] = useState("");
   const [materialSearchFocused, setMaterialSearchFocused] = useState(false);
@@ -117,7 +117,7 @@ export default function DirectReceiving() {
   const [taxModalRowId, setTaxModalRowId] = useState<string | null>(null);
   const [taxModalTypeId, setTaxModalTypeId] = useState("");
 
-  const receivingId = useMemo(() => "RCV-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
+  const grnId = useMemo(() => "GRN-2026-" + String(Math.floor(Math.random() * 900) + 100), []);
 
   const filteredMaterials = useMemo(() => {
     if (!materialSearch.trim()) return [];
@@ -210,26 +210,22 @@ export default function DirectReceiving() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <Select value={outlet} onValueChange={setOutlet} disabled={!isAdmin}>
-              <SelectTrigger className="w-[170px] h-9 text-xs bg-card">
-                <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MOCK_OUTLETS.map((o) =>
-                  <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            <span className="text-xs text-muted-foreground font-mono">{receivingId}</span>
-            <Badge variant="outline" className="text-[10px] border-amber-200 bg-amber-50 text-amber-700">Draft</Badge>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border bg-muted/40">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">PO Creation Date:</span>
-              <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs font-medium text-foreground">{format(receivingDate, "dd MMM yyyy")}</span>
+            <div>
+              <h1 className="text-lg font-semibold text-foreground leading-tight">Direct Receiving</h1>
+              <p className="text-xs text-muted-foreground">Receive materials directly without a Purchase Order.</p>
             </div>
           </div>
-          <Badge variant="outline" className="text-[10px] border-border bg-muted/50 text-muted-foreground">Direct Receiving</Badge>
+          <Select value={outlet} onValueChange={setOutlet} disabled={!isAdmin}>
+            <SelectTrigger className="w-[170px] h-9 text-xs bg-card">
+              <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MOCK_OUTLETS.map((o) =>
+                <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+              )}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -270,8 +266,19 @@ export default function DirectReceiving() {
               </Popover>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground mb-1.5 block">Reference Invoice File</Label>
-              <Input type="url" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" className="bg-card" />
+              <Label className="text-xs text-muted-foreground mb-1.5 block">Invoice File</Label>
+              <div className="flex items-center gap-2">
+                <label className={cn("flex items-center gap-2 px-3 h-10 w-full rounded-md border border-input bg-card text-sm cursor-pointer hover:bg-muted/40 transition-colors", invoiceFile ? "text-foreground" : "text-muted-foreground")}>
+                  <Upload className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="truncate">{invoiceFile ? invoiceFile.name : "Upload invoice file"}</span>
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" onChange={(e) => setInvoiceFile(e.target.files?.[0] || null)} />
+                </label>
+                {invoiceFile && (
+                  <button onClick={() => setInvoiceFile(null)} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -393,8 +400,7 @@ export default function DirectReceiving() {
       </div>
 
       {/* Sticky Footer */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border py-3 -mx-1 px-1 flex items-center justify-between">
-        <Button variant="outline" className="text-sm">Save Draft</Button>
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border py-3 -mx-1 px-1 flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button variant="ghost" onClick={() => navigate("/procurements/receivings")} className="text-sm">Cancel</Button>
           <Button variant="cento" disabled={!canSubmit} onClick={() => setShowSubmitDialog(true)} className="text-sm">Submit Receiving</Button>

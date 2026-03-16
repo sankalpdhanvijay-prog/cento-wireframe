@@ -2,12 +2,13 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { settingsSubModules } from "@/config/navigation";
 import { cn } from "@/lib/utils";
-import { Settings as SettingsIcon, Upload, Download, Plus, Trash2, Pencil, Search, X } from "lucide-react";
+import { Settings as SettingsIcon, Upload, Download, Plus, Trash2, Pencil, Search, X, MapPin } from "lucide-react";
 import OutletManagement from "./OutletManagement";
 import UserManagement from "./UserManagement";
 import TaxManagement from "./TaxManagement";
 import UnitManagement from "./UnitManagement";
 import AuditWastageManagement from "./AuditWastageManagement";
+import RecipeManagement from "./RecipeManagement";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -446,6 +447,34 @@ function VendorFormSection({ form, setForm }: { form: VendorForm; setForm: (f: V
 // ══════════════════════════════════════════════════════════════
 // Settings Content Sections
 // ══════════════════════════════════════════════════════════════
+function OrdersManagementContent() {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h2 className="cento-page-title">Orders Management</h2>
+        <Select value="all" onValueChange={() => {}}>
+          <SelectTrigger className="w-[200px] h-9 text-xs bg-card">
+            <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Outlets</SelectItem>
+            {MOCK_OUTLETS.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="cento-card">
+        <h3 className="cento-section-header mb-5">Configuration</h3>
+        <div className="cento-empty-state">
+          <div className="h-10 w-10 rounded-xl bg-cento-yellow-tint flex items-center justify-center mb-3"><SettingsIcon className="h-5 w-5 text-muted-foreground" strokeWidth={1.5} /></div>
+          <p className="text-sm font-medium text-foreground">Orders Management</p>
+          <p className="text-xs text-muted-foreground mt-1">Configure your orders management settings here.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SettingsContent({ title }: { title: string }) {
   return (
     <div className="space-y-5">
@@ -491,7 +520,19 @@ function MaterialManagementContent({ editMaterialCode, scrollToEdit }: { editMat
 
   return (
     <div className="space-y-8">
-      <h2 className="cento-page-title">Material Management</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="cento-page-title">Material Management</h2>
+        <Select value="all" onValueChange={() => {}}>
+          <SelectTrigger className="w-[200px] h-9 text-xs bg-card">
+            <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Outlets</SelectItem>
+            {MOCK_OUTLETS.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="cento-card">
         <h3 className="cento-section-header mb-5">Add Material</h3>
@@ -577,7 +618,19 @@ function VendorManagementContent({ editVendorId, scrollToEdit }: { editVendorId?
 
   return (
     <div className="space-y-8">
-      <h2 className="cento-page-title">Vendor Management</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="cento-page-title">Vendor Management</h2>
+        <Select value="all" onValueChange={() => {}}>
+          <SelectTrigger className="w-[200px] h-9 text-xs bg-card">
+            <MapPin className="h-3 w-3 text-muted-foreground mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Outlets</SelectItem>
+            {MOCK_OUTLETS.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* ADD VENDOR */}
       <div className="cento-card">
@@ -650,10 +703,11 @@ function VendorManagementContent({ editVendorId, scrollToEdit }: { editVendorId?
 // ══════════════════════════════════════════════════════════════
 export default function Settings() {
   const location = useLocation();
-  const state = location.state as { section?: string; editMaterial?: string; editVendor?: string; scrollToEdit?: boolean } | null;
+  const state = location.state as { section?: string; editMaterial?: string; editVendor?: string; editRecipe?: string; scrollToEdit?: boolean } | null;
   const sectionFromState = state?.section;
   const editMaterialCode = state?.editMaterial;
   const editVendorId = state?.editVendor;
+  const editRecipeId = state?.editRecipe;
   const scrollToEdit = state?.scrollToEdit;
   const [activeSection, setActiveSection] = useState(sectionFromState || settingsSubModules[0].path);
 
@@ -665,6 +719,8 @@ export default function Settings() {
   const isTaxManagement = activeSection === "/settings/tax";
   const isUnitManagement = activeSection === "/settings/units";
   const isAuditWastage = activeSection === "/settings/audit-wastage";
+  const isRecipeManagement = activeSection === "/settings/recipe-management";
+  const isOrdersManagement = activeSection === "/settings/orders-management";
 
   const renderContent = () => {
     if (isOutletManagement) return <OutletManagement />;
@@ -674,6 +730,8 @@ export default function Settings() {
     if (isTaxManagement) return <TaxManagement />;
     if (isUnitManagement) return <UnitManagement />;
     if (isAuditWastage) return <AuditWastageManagement />;
+    if (isRecipeManagement) return <RecipeManagement editRecipeId={editRecipeId} scrollToEdit={scrollToEdit} />;
+    if (isOrdersManagement) return <OrdersManagementContent />;
     if (activeSub) return <SettingsContent title={activeSub.title} />;
     return null;
   };
