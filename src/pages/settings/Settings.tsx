@@ -490,7 +490,6 @@ function SettingsContent({ title }: { title: string }) {
     </div>
   );
 }
-}
 
 function MaterialManagementContent({ editMaterialCode, scrollToEdit }: { editMaterialCode?: string; scrollToEdit?: boolean }) {
   const editRef = useRef<HTMLDivElement>(null);
