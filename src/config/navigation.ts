@@ -77,12 +77,6 @@ export const mainModules: NavModule[] = [
     ],
   },
   {
-    title: "Inventory",
-    path: "/inventory",
-    icon: Package,
-    standout: true,
-  },
-  {
     title: "Audits",
     path: "/audits",
     icon: ClipboardCheck,
