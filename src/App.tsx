@@ -35,7 +35,7 @@ import Productions from "./pages/operations/Productions";
 import NewProduction from "./pages/operations/NewProduction";
 import ViewProductionDetails from "./pages/operations/ViewProductionDetails";
 
-import Inventory from "./pages/Inventory";
+// Inventory now lives inside Dashboard tab
 import Materials from "./pages/entities/Materials";
 import Recipes from "./pages/entities/Recipes";
 import Vendors from "./pages/entities/Vendors";
