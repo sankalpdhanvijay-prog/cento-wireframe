@@ -3,7 +3,7 @@ import {
   BarChart3,
   ShoppingCart,
   Truck,
-  Package,
+  
   Building2,
   ClipboardCheck,
   Trash2,
@@ -75,12 +75,6 @@ export const mainModules: NavModule[] = [
       { title: "Recipes", path: "/entities/recipes", icon: ChefHat },
       { title: "Vendors", path: "/entities/vendors", icon: Users },
     ],
-  },
-  {
-    title: "Inventory",
-    path: "/inventory",
-    icon: Package,
-    standout: true,
   },
   {
     title: "Audits",

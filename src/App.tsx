@@ -35,7 +35,7 @@ import Productions from "./pages/operations/Productions";
 import NewProduction from "./pages/operations/NewProduction";
 import ViewProductionDetails from "./pages/operations/ViewProductionDetails";
 
-import Inventory from "./pages/Inventory";
+// Inventory now lives inside Dashboard tab
 import Materials from "./pages/entities/Materials";
 import Recipes from "./pages/entities/Recipes";
 import Vendors from "./pages/entities/Vendors";
@@ -101,7 +101,7 @@ const App = () => (
                     <Route path="/operations/productions/new-production" element={<NewProduction />} />
                     <Route path="/operations/productions/:id" element={<ViewProductionDetails />} />
 
-                    <Route path="/inventory" element={<Inventory />} />
+                    {/* Inventory removed — now inside Dashboard → Inventory tab */}
                     <Route path="/entities" element={<Navigate to="/entities/materials" replace />} />
                     <Route path="/entities/materials" element={<Materials />} />
                     <Route path="/entities/recipes" element={<Recipes />} />
