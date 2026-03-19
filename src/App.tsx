@@ -101,7 +101,7 @@ const App = () => (
                     <Route path="/operations/productions/new-production" element={<NewProduction />} />
                     <Route path="/operations/productions/:id" element={<ViewProductionDetails />} />
 
-                    <Route path="/inventory" element={<Inventory />} />
+                    {/* Inventory removed — now inside Dashboard → Inventory tab */}
                     <Route path="/entities" element={<Navigate to="/entities/materials" replace />} />
                     <Route path="/entities/materials" element={<Materials />} />
                     <Route path="/entities/recipes" element={<Recipes />} />
