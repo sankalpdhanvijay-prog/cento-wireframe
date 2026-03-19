@@ -3,7 +3,7 @@ import {
   BarChart3,
   ShoppingCart,
   Truck,
-  Package,
+  
   Building2,
   ClipboardCheck,
   Trash2,
